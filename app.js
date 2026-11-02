@@ -655,6 +655,66 @@
     el.value = value;
   }
 
+  /* List the real voices installed on the phone so the quality choice is
+     visible and can be pinned. Falls back to "Automatic" when the phone does
+     not name any voice of the requested gender. */
+  function renderVoiceModels() {
+    const sel = $("voiceModel");
+    if (!sel || !state) return;
+    const s = state.settings.voice;
+    let listed = { voices: [], male: [], bestMale: null, bestFemale: null };
+    try { listed = Voice.listVoices() || listed; } catch (e) {}
+    const want = s.gender === "female" ? "female" : s.gender === "male" ? "male" : null;
+
+    let items = (listed.voices || []).filter((v) => !want || v.gender === want);
+    if (!items.length) items = (listed.voices || []).slice();
+    items.sort((a, b) => (b.maleRank || b.quality || 0) - (a.maleRank || a.quality || 0));
+
+    const autoLabel = want === "male"
+      ? "Automatic - best male voice"
+      : want === "female"
+        ? "Automatic - best female voice"
+        : "Automatic - best device voice";
+    const options = [{ value: "", label: autoLabel }].concat(items.map((v) => {
+      const badge = v.recommendedMale && want === "male" ? " - recommended"
+        : v.recommendedFemale && want === "female" ? " - recommended" : "";
+      return {
+        value: v.uri || v.name,
+        label: v.name + (v.local ? " (on device)" : " (online)") + badge
+      };
+    }));
+    // Never drop a saved pin just because the phone has not published its
+    // voice list yet. Only forget it when voices are known and the pin is gone.
+    const hasVoices = items.length > 0;
+    const known = items.some((v) => (v.uri || v.name) === s.name);
+    const current = s.name && (!hasVoices || known) ? s.name : "";
+    fillSelect(sel, options, current);
+    if (hasVoices && s.name && !known) s.name = "";
+
+    const hint = $("voiceModelHint");
+    if (hint) {
+      if (want === "male") {
+        hint.textContent = listed.bestMale
+          ? "Using " + listed.bestMale.name + (listed.bestMale.local ? " - high quality and works offline." : " - high quality, needs internet. A voice on the device is used if it is unavailable.")
+          : "This phone has no named male voice yet. A pitch-adjusted voice is used until you install one in your phone's text-to-speech settings.";
+      } else if (want === "female") {
+        hint.textContent = listed.bestFemale
+          ? "Using " + listed.bestFemale.name + "."
+          : "This phone has no named female voice yet, so the closest voice is used.";
+      } else {
+        hint.textContent = "Choose a specific installed voice, or let the app pick the best one automatically.";
+      }
+    }
+  }
+
+  /* Voices often arrive after the Settings view is first drawn. */
+  function renderVoiceModelsWhenReady() {
+    renderVoiceModels();
+    if (Voice.awaitVoices) {
+      Voice.awaitVoices(2600).then(renderVoiceModels).catch(() => {});
+    }
+  }
+
   function renderSettings() {
     if (!state) return;
     const s = state.settings;
@@ -705,6 +765,7 @@
     ], s.voice.speed);
     $("voiceVolume").value = s.voice.volume;
     $("voiceVolLabel").textContent = s.voice.volume + "%";
+    renderVoiceModelsWhenReady();
     fillSelect($("snoozeSelect"), [5, 10, 15, 30].map((m) => ({ value: String(m), label: m + " min" })), String(s.defaultSnooze));
 
     $$("#themeSeg button").forEach((b) => b.classList.toggle("on", b.dataset.themeSet === s.theme));
@@ -1445,7 +1506,7 @@
 
   function voiceConfig() {
     const v = state.settings.voice;
-    return { language: v.language, gender: v.gender, speed: v.speed, volume: v.volume };
+    return { language: v.language, gender: v.gender, speed: v.speed, volume: v.volume, voiceName: v.name };
   }
 
   async function sendNotification(rem) {
@@ -1562,6 +1623,10 @@
         el.textContent = "Playing with " + (res.voice || "the closest system voice") +
           " - this phone has no separate " + (state.settings.voice.gender === "male" ? "male" : "female") +
           " voice, so the pitch is adjusted.";
+      } else if (res.fallback) {
+        el.textContent = res.voice === "phone default"
+          ? "Playing with the phone's default voice."
+          : "The chosen voice did not answer, so the backup voice " + res.voice + " is playing.";
       } else {
         el.textContent = "Playing with " + (res.voice || "the system voice") + ".";
       }
@@ -2159,7 +2224,6 @@
     });
 
     $("addReminderBtn").addEventListener("click", () => openReminder(null));
-    $("fabAdd").addEventListener("click", () => { haptic(10); openReminder(null); });
 
     $("reminderList").addEventListener("click", (e) => {
       if (e.target.closest(".switch")) return;
@@ -2245,6 +2309,15 @@
     });
     $("voiceGender").addEventListener("change", (e) => {
       state.settings.voice.gender = e.target.value;
+      // A pinned voice belongs to the previous gender; let the new one be
+      // chosen automatically.
+      state.settings.voice.name = "";
+      save();
+      renderVoiceModelsWhenReady();
+      testVoice();
+    });
+    $("voiceModel").addEventListener("change", (e) => {
+      state.settings.voice.name = e.target.value;
       save();
       testVoice();
     });

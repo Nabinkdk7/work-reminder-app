@@ -175,7 +175,7 @@
       <div id="todayEmpty" class="empty hidden">
         <div class="empty-ic"><svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg></div>
         <b>Nothing on the schedule</b>
-        <p>Tap the + button to add a reminder.</p>
+        <p>Open Schedule and tap Add to create a reminder.</p>
       </div>
     </article>
   </section>
@@ -272,7 +272,7 @@
   <section id="view-settings" class="view" data-view="settings">
     <div class="view-head">
       <div><p class="eyebrow">Personalize</p><h2>Settings</h2></div>
-      <span class="chip subtle" id="appVersionChip">v1.3.1</span>
+      <span class="chip subtle" id="appVersionChip">v1.4.0</span>
     </div>
 
     <article class="card">
@@ -331,6 +331,11 @@
           <option value="male">Male</option>
         </select>
       </label>
+      <label class="field">
+        <span>Voice model</span>
+        <select id="voiceModel"></select>
+      </label>
+      <p class="helper" id="voiceModelHint">The best quality male voice installed on this phone is chosen automatically and used for every reminder.</p>
       <label class="field">
         <span>Speed</span>
         <select id="voiceSpeed">
@@ -435,11 +440,11 @@
     <article class="card update-card" id="updateCard">
       <div class="card-head">
         <h3><svg class="ic" aria-hidden="true"><use href="#i-refresh"></use></svg> App updates</h3>
-        <span class="chip" id="updateBadge">v1.3.1</span>
+        <span class="chip" id="updateBadge">v1.4.0</span>
       </div>
       <p id="updateText" class="muted small">Updates come straight from this Vercel site. Check any time, or let the app check when you open it.</p>
       <div id="updateNotesWrap" class="update-notes hidden">
-        <b>What's new in <span id="updateVersion">v1.3.1</span></b>
+        <b>What's new in <span id="updateVersion">v1.4.0</span></b>
         <ul id="updateNotes"></ul>
       </div>
       <div class="btn-row">
@@ -453,7 +458,7 @@
     <article class="card about">
       <div class="about-brand">
         <img src="icons/icon-192.png" width="44" height="44" alt="">
-        <div><b>Work Reminder</b><span id="aboutVersion">v1.3.1</span></div>
+        <div><b>Work Reminder</b><span id="aboutVersion">v1.4.0</span></div>
       </div>
       <p class="muted small">Same reminders, rich chimes and natural voice as the browser extension, rebuilt for phones.</p>
       <div class="about-links">
@@ -464,10 +469,6 @@
     </article>
   </section>
 </main>
-
-<button id="fabAdd" class="fab" type="button" aria-label="Add reminder">
-  <svg class="ic" aria-hidden="true"><use href="#i-plus"></use></svg>
-</button>
 
 <nav class="tabbar" aria-label="Main navigation">
   <button class="tab active" type="button" data-view="home"><svg class="ic" aria-hidden="true"><use href="#i-home"></use></svg><span>Home</span></button>
@@ -621,7 +622,7 @@
     <div class="update-hero">
       <span class="update-hero-icon"><svg class="ic" aria-hidden="true"><use href="#i-sparkles"></use></svg></span>
       <div>
-        <b id="whatsNewVersion">v1.3.1</b>
+        <b id="whatsNewVersion">v1.4.0</b>
         <span id="whatsNewDate" class="muted small"></span>
       </div>
     </div>

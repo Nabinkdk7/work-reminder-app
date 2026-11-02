@@ -1041,14 +1041,17 @@ html[data-theme="light"] .update-notes { background: rgba(124, 58, 237, 0.07); }
   border-radius: 14px;
   background: var(--panel-3);
   color: var(--accent-2);
+  line-height: 0;
 }
+.update-hero-icon .ic { width: 22px; height: 22px; }
 .update-hero b { display: block; font-size: 18px; letter-spacing: -0.01em; }
-.update-hero span { display: block; }
+/* Only the text column stacks; this must not override the icon tile's grid. */
+.update-hero > div > span { display: block; }
 .update-list { margin: 0; padding-left: 20px; }
 .update-list li { font-size: 13px; color: var(--text); margin: 9px 0; }
 .update-list li::marker { color: var(--accent-2); }
 
-/* ---------------- bottom nav / fab ---------------- */
+/* ---------------- bottom nav ---------------- */
 .tabbar {
   position: fixed;
   left: 50%;
@@ -1100,28 +1103,6 @@ html[data-theme="light"] .tabbar { background: rgba(247, 249, 255, 0.97); }
   background: var(--grad);
 }
 .tab:active { transform: scale(0.97); }
-
-.fab {
-  position: fixed;
-  right: 18px;
-  bottom: calc(var(--nav-h) + var(--safe-bottom) + 18px);
-  z-index: 51;
-  display: grid;
-  place-items: center;
-  width: 52px;
-  height: 52px;
-  border: 0;
-  border-radius: 50%;
-  background: var(--grad);
-  color: #071018;
-  box-shadow: 0 12px 28px rgba(103, 232, 249, 0.3), 0 3px 12px rgba(2, 6, 18, 0.38);
-  cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.2s ease;
-}
-html[data-theme="light"] .fab { color: #fff; }
-.fab .ic { width: 21px; height: 21px; stroke-width: 2; }
-.fab:hover { transform: translateY(-1px); box-shadow: 0 16px 32px rgba(103, 232, 249, 0.38), 0 3px 12px rgba(2, 6, 18, 0.38); }
-.fab:active { transform: scale(0.94); }
 
 /* ---------------- sheets ---------------- */
 body.sheet-open { overflow: hidden; }
@@ -1319,7 +1300,6 @@ html[data-theme="light"] .toast { background: rgba(255, 255, 255, 0.97); }
     padding-bottom: 7px;
     box-shadow: var(--shadow);
   }
-  .fab { right: max(24px, calc(50vw - 320px + 24px)); bottom: 104px; }
   .sheet-wrap { align-items: center; padding: 24px; }
   .sheet {
     max-width: 540px;

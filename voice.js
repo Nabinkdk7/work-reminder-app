@@ -15,6 +15,11 @@
   const LANGS = { en: ["en"], ne: ["ne", "en-IN", "hi", "en"], hi: ["hi", "en-IN", "en"] };
   const FEMALE_HINTS = ["female", "zira", "samantha", "victoria", "karen", "moira", "tessa", "fiona", "veena", "aditi", "ava", "susan", "kate", "emily", "serena", "heera", "lekha", "aria", "jenny", "hazel", "allison", "ariaonline", "eva", "paulina", "amelie", "denise", "joanna", "kimberly", "salli", "amy", "raveena", "priya", "kalpana", "neerja", "zhiyu", "huihui", "yaoyao", "zoe", "nicky", "martha", "sonia", "lucia", "camila", "valentina", "sofia", "isabella", "gabriela", "mia", "ella", "olivia", "marisol"];
   const MALE_HINTS = ["male", "david", "daniel", "mark", "alex", "fred", "thomas", "rishi", "ravi", "hemant", "george", "james", "roger", "guy", "ryan", "davis", "christopher", "brian", "neil", "arthur", "arun", "madhur", "valluvar", "jian", "kangkang", "yunyang", "aaron", "adam", "gordon", "tom", "oliver", "liam", "steffan", "antonio", "diego", "jorge", "mike", "henry", "tony", "bob", "maged", "tarik", "yuri", "dmitri", "pavel"];
+  /* Curated male voices known to sound natural. Matching a good voice by name
+     matters more than the raw voice-list order, which is arbitrary and often
+     starts with a low-quality compact voice. */
+  const MALE_PREMIUM = /alex|daniel|arthur|aaron|fred|tom|oliver|rishi|hemant|guy|andrew|brian|christopher|davis|eric|steffan|roger|google uk english male|google us english male/;
+  const MALE_STANDARD = /david|mark|james|george|ryan|thomas|ravi|arun|madhur|jian|liam|tony|henry|mike|bob|adam|gordon|maged|tarik|yuri|dmitri|pavel/;
   const SETTLE_MS = 90;
 
   let voicesCache = null;
@@ -130,17 +135,23 @@
 
   function voiceScore(v, gender) {
     const n = voiceKey(v).toLowerCase();
+    const g = voiceGenderOf(v);
     let s = 0;
-    // A local voice starts instantly and works offline. Network voices are a
-    // useful bonus only when they are clearly higher quality.
-    if (v.localService) s += 8; else s += 1;
-    if (n.includes("natural")) s += 7;
-    if (n.includes("neural")) s += 6;
-    if (n.includes("enhanced") || n.includes("premium")) s += 5;
-    if (n.includes("google")) s += 4;
-    if (n.includes("online")) s += 1;
-    if (gender === "male" && /david|daniel|alex|fred|george|rishi|ravi|hemant|guy|james|ryan|arthur|thomas|mark/.test(n)) s += 3;
-    if (gender === "female" && /aria|jenny|zira|samantha|ava|susan|amy|sonia|karen|moira|tessa/.test(n)) s += 3;
+    // Quality first: natural/neural voices sound markedly better than the
+    // compact voices most phones list first.
+    if (n.includes("natural")) s += 18;
+    if (n.includes("neural")) s += 16;
+    if (n.includes("enhanced") || n.includes("premium")) s += 8;
+    if (n.includes("google")) s += 3;
+    // A local voice starts instantly and works offline, so it edges out an
+    // otherwise equal network voice.
+    s += v.localService ? 10 : 2;
+    // A genuine match in the requested gender always wins.
+    if (gender && g === gender) s += 40;
+    else if (gender && g && g !== gender) s -= 30;
+    if (gender === "male" && MALE_PREMIUM.test(n)) s += 14;
+    if (gender === "male" && MALE_STANDARD.test(n)) s += 6;
+    if (gender === "female" && /aria|jenny|zira|samantha|ava|susan|amy|sonia|karen|moira|tessa|victoria|serena|olivia|mia|ella/.test(n)) s += 10;
     return s;
   }
 
@@ -149,31 +160,43 @@
     return sorted[0] || null;
   }
 
+  function makePicked(voice, wantG) {
+    const matched = wantG ? voiceGenderOf(voice) === wantG : true;
+    return { voice, matched, approximate: !!wantG && !matched, local: !!voice.localService };
+  }
+
   function pickFromPool(pool, wantG) {
     if (!pool.length) return null;
-    // Local voices are the only ones guaranteed to synthesize. Prefer a local
-    // unlabelled voice (pitch-adjusted) over a remote "male" voice that may
-    // answer with synthesis-failed on a phone with no connection.
-    const local = pool.filter((v) => v.localService);
-    const base = local.length ? local : pool;
+    // When the phone names a voice of the requested gender, that voice is
+    // always the best answer. Otherwise fall back to the highest-quality
+    // available voice and approximate the gender with pitch.
     if (wantG) {
-      const exact = base.filter((v) => voiceGenderOf(v) === wantG);
-      if (exact.length) {
-        const voice = bestOf(exact, wantG);
-        return { voice, matched: true, approximate: false, local: !!voice.localService };
-      }
+      const exact = pool.filter((v) => voiceGenderOf(v) === wantG);
+      if (exact.length) return makePicked(bestOf(exact, wantG), wantG);
     }
-    const voice = bestOf(base, wantG);
-    return { voice, matched: false, approximate: !!wantG, local: !!voice.localService };
+    return makePicked(bestOf(pool, wantG), wantG);
+  }
+
+  function findPreferred(list, preferred) {
+    if (!preferred) return null;
+    const p = String(preferred).trim().toLowerCase();
+    if (!p) return null;
+    return list.find((v) =>
+      String(v.voiceURI || "").toLowerCase() === p || String(v.name || "").toLowerCase() === p
+    ) || null;
   }
 
   /* Never returns null while the phone has at least one voice. `matched` says
      whether the chosen voice is genuinely the requested gender; when false the
-     caller lowers/raises pitch to approximate it. */
-  function pickVoice(language, gender) {
+     caller lowers/raises pitch to approximate it. `preferred` pins the exact
+     voice the user chose, so the same voice speaks every reminder. */
+  function pickVoice(language, gender, preferred) {
     const vs = voices().filter((v) => v && v.lang);
     const wantG = (gender === "female" || gender === "male") ? gender : null;
     if (!vs.length) return null;
+
+    const pinned = findPreferred(vs, preferred);
+    if (pinned) return makePicked(pinned, wantG);
 
     const prefs = LANGS[language] || (language && language !== "system" ? [language, "en"] : ["en"]);
     for (const p of prefs) {
@@ -183,6 +206,25 @@
     }
 
     return pickFromPool(vs, wantG);
+  }
+
+  /* The next-best voice of the requested gender. Used only when the selected
+     voice itself refuses to synthesize, so quality stays high instead of
+     dropping straight to an unlabelled default. */
+  function alternativeVoice(language, gender, exclude) {
+    const wantG = (gender === "female" || gender === "male") ? gender : null;
+    const skip = exclude ? voiceKey(exclude).toLowerCase() : "";
+    const vs = voices().filter((v) => v && v.lang && voiceKey(v).toLowerCase() !== skip);
+    if (!wantG || !vs.length) return null;
+
+    const exact = vs.filter((v) => voiceGenderOf(v) === wantG);
+    if (!exact.length) return null;
+    const prefs = LANGS[language] || (language && language !== "system" ? [language, "en"] : ["en"]);
+    for (const p of prefs) {
+      const pool = exact.filter((v) => String(v.lang).toLowerCase().startsWith(String(p).toLowerCase()));
+      if (pool.length) return makePicked(bestOf(pool, wantG), wantG);
+    }
+    return makePicked(bestOf(exact, wantG), wantG);
   }
 
   function normalize(text) {
@@ -197,20 +239,18 @@
     return isFinite(vol) ? Math.min(1, Math.max(0, vol / 100)) : 0.8;
   }
 
-  /* Approximate a missing gender with pitch. A known opposite voice needs a
-     stronger shift than an unlabelled system voice. */
+  /* Approximate a missing gender with pitch. A real male voice is left alone -
+     lowering its pitch made good voices sound slow and muffled. Only voices of
+     the wrong or unknown gender are shifted, and as little as still reads male. */
   function pitchFor(gender, picked) {
     if (gender !== "male" && gender !== "female") return 1.0;
     if (gender === "male") {
-      if (picked.matched) {
-        try { if (typeof WR !== "undefined" && WR.voicePitch) return WR.voicePitch("male"); } catch (e) {}
-        return 0.86;
-      }
+      if (picked.matched) return 1.0;
       const base = voiceGenderOf(picked.voice);
-      return base === "female" ? 0.58 : 0.66;
+      return base === "female" ? 0.64 : 0.72;
     }
     if (picked.matched) return 1.0;
-    return voiceGenderOf(picked.voice) === "male" ? 1.16 : 1.1;
+    return voiceGenderOf(picked.voice) === "male" ? 1.18 : 1.1;
   }
 
   function normalizeLang(value) {
@@ -305,7 +345,7 @@
 
       await awaitVoices(voices().length ? 400 : 2600);
 
-      const picked = pickVoice(lang, cfg.gender || "default");
+      const picked = pickVoice(lang, cfg.gender || "default", cfg.voiceName);
       if (!picked || !picked.voice) return resolve({ ok: false, error: "no-voices" });
 
       let rate = 0.86;
@@ -318,11 +358,17 @@
       const baseLang = (typeof WR !== "undefined" && WR.ttsLang ? WR.ttsLang(lang) : "en-US") || "en-US";
 
       const attempts = [
-        { voice: picked.voice, lang: picked.voice.lang || baseLang, rate, pitch },
-        // Android's safest path: no explicit voice and no forced locale, just
-        // the phone's own default engine, with pitch carrying the gender.
-        { voice: null, lang: null, rate, pitch: fallbackPitch }
+        { voice: picked.voice, lang: picked.voice.lang || baseLang, rate, pitch }
       ];
+
+      // A second real voice of the same gender keeps quality up if the first
+      // choice is a network voice that cannot synthesize right now.
+      const alt = wantG ? alternativeVoice(lang, wantG, picked.voice) : null;
+      if (alt) attempts.push({ voice: alt.voice, lang: alt.voice.lang || baseLang, rate, pitch: pitchFor(wantG, alt) });
+
+      // Android's safest path: no explicit voice and no forced locale, just
+      // the phone's own default engine, with pitch carrying the gender.
+      attempts.push({ voice: null, lang: null, rate, pitch: fallbackPitch });
 
       let last = null;
       for (let i = 0; i < attempts.length; i++) {
@@ -336,10 +382,13 @@
         if (res.ok) {
           return resolve(Object.assign({}, res, {
             selectedVoice: picked.voice.name,
+            selectedVoiceUri: picked.voice.voiceURI,
             matched: picked.matched,
             approximate: !!wantG && !picked.matched,
             genderMatched: !wantG || picked.matched,
-            fallback: i > 0
+            pinned: !!findPreferred(voices(), cfg.voiceName),
+            fallback: i > 0,
+            attempt: i + 1
           }));
         }
         last = res;
@@ -383,14 +432,34 @@
   }
 
   function listVoices() {
-    const vs = voices().map((v) => ({
+    const raw = voices();
+    const vs = raw.map((v) => ({
       name: v.name,
       uri: v.voiceURI,
       lang: v.lang,
       local: !!v.localService,
-      gender: voiceGenderOf(v)
+      gender: voiceGenderOf(v),
+      quality: voiceScore(v, null),
+      maleRank: voiceScore(v, "male")
     }));
-    return { ok: true, count: vs.length, voices: vs.slice(0, 120) };
+    const bestMale = bestOf(raw.filter((v) => voiceGenderOf(v) === "male"), "male");
+    const bestFemale = bestOf(raw.filter((v) => voiceGenderOf(v) === "female"), "female");
+    const bestKey = bestMale ? voiceKey(bestMale).toLowerCase() : "";
+    const bestFKey = bestFemale ? voiceKey(bestFemale).toLowerCase() : "";
+    vs.forEach((v) => {
+      const key = (voiceKey({ name: v.name, voiceURI: v.uri }) || "").toLowerCase();
+      v.recommendedMale = !!bestKey && key === bestKey;
+      v.recommendedFemale = !!bestFKey && key === bestFKey;
+    });
+    const male = vs.filter((v) => v.gender === "male").sort((a, b) => b.maleRank - a.maleRank);
+    return {
+      ok: true,
+      count: vs.length,
+      voices: vs.slice(0, 160),
+      male: male.slice(0, 40),
+      bestMale: bestMale ? { name: bestMale.name, uri: bestMale.voiceURI, lang: bestMale.lang, local: !!bestMale.localService } : null,
+      bestFemale: bestFemale ? { name: bestFemale.name, uri: bestFemale.voiceURI, lang: bestFemale.lang, local: !!bestFemale.localService } : null
+    };
   }
 
   bindVoicesChanged();

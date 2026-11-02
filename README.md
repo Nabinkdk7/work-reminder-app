@@ -28,7 +28,9 @@ tools.
 ### Sound & voice
 - Fourteen generated WebAudio chimes including the warm three-strike default
   bell (~3 seconds), plus a per-reminder preview button.
-- Natural female, male or system voices with English, Nepali and Hindi
+- A high-quality male voice is the default on every reminder. Settings shows
+  the real voices installed on the phone so one can be pinned for consistency.
+- Female and system voices remain available, with English, Nepali and Hindi
   language preferences, speed and volume control.
 - Speech text is normalized (emojis, `&`, punctuation) without altering the
   stored reminder text.
@@ -185,9 +187,10 @@ sent to a server. Use **Settings → Backup & data** before changing phones.
 | Chrome / Edge / Firefox (desktop) | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Safari (macOS) | ✅ | ✅ | ✅ | ✅ | ✅ |
 
-Voice availability depends on the voices installed on the device. The app prefers
-an exact male or female voice; if the phone only exposes unlabelled voices, it
-adjusts pitch to approximate the requested gender instead of failing.
+Voice availability depends on the voices installed on the device. The app ranks
+the installed voices by quality, prefers a real male voice, and leaves it at its
+natural pitch. If the phone only exposes unlabelled voices, pitch is adjusted
+instead of failing. A voice pinned in Settings is used for every reminder.
 
 ---
 

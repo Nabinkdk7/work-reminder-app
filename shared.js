@@ -9,7 +9,7 @@
 
   const APP = {
     name: "Work Reminder",
-    version: "1.3.1",
+    version: "1.4.0",
     developer: "Nabin Khadka",
     devUrl: "https://nabinkhadka.com",
     repoUrl: "https://github.com/Nabinkdk7/work-reminder-app",
@@ -54,7 +54,11 @@
     pausedUntil: 0,
     haptics: true,
     keepAwake: false,
-    voice: { gender: "default", language: "en", speed: "normal", volume: 80 },
+    /* The app ships with a male voice by default. `name` pins one specific
+       installed voice (voiceURI/name); empty means "best male voice on this
+       device", chosen deterministically by the voice engine. `rev` migrates
+       older installs that never expressed a voice preference. */
+    voice: { gender: "male", language: "en", speed: "normal", volume: 80, name: "", rev: 2 },
     sound: { name: "default", volume: 80 },
   };
 
@@ -145,6 +149,18 @@
     const rs = (raw && raw.sound && typeof raw.sound === "object") ? raw.sound : {};
     const so = Object.assign({}, DEFAULT_SETTINGS.sound, rs);
 
+    // v1.4.0 migration: the app now defaults to a high-quality male voice.
+    // Apply it once to installs created before this build, then remember
+    // that the choice was made so an explicit "System default" sticks.
+    const voiceRev = clampNum(rv.rev, 0, 99, 0);
+    const legacyVoice = voiceRev < 2;
+    const gender = legacyVoice
+      ? "male"
+      : (["default", "male", "female"].indexOf(v.gender) >= 0 ? v.gender : "male");
+    const voiceName = legacyVoice
+      ? ""
+      : (typeof v.name === "string" ? v.name.slice(0, 200) : "");
+
     return {
       enabled: s.enabled !== false,
       voiceEnabled: s.voiceEnabled !== false,
@@ -156,10 +172,12 @@
       haptics: s.haptics !== false,
       keepAwake: s.keepAwake === true,
       voice: {
-        gender: ["default", "male", "female"].indexOf(v.gender) >= 0 ? v.gender : "default",
+        gender,
         language: ["en", "ne", "hi", "system"].indexOf(v.language) >= 0 ? v.language : "en",
         speed: ["slow", "normal", "fast"].indexOf(v.speed) >= 0 ? v.speed : "normal",
         volume: clampNum(v.volume, 0, 100, 80),
+        name: voiceName,
+        rev: 2,
       },
       sound: {
         name: (typeof so.name === "string" && SETTINGS_SOUND_NAMES.indexOf(so.name) >= 0) ? so.name : "default",

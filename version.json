@@ -1,11 +1,11 @@
 {
-  "version": "1.3.1",
+  "version": "1.4.0",
   "released": "2026-11-03",
   "notes": [
-    "Fixed: the mobile voice test no longer fails with synthesis-failed. If the selected voice is refused, it automatically retries with the phone's default voice.",
-    "Improved: speech now prefers voices stored on the phone, so it works without mobile data.",
-    "Improved: the engine is no longer cancelled right before speaking, which Android could reject.",
-    "Improved: the male voice still falls back to a pitch-adjusted local voice when the phone has no named male voice.",
-    "Updated: the GitHub repository link points to work-reminder-app."
+    "New: a high-quality male voice is now the default for every reminder.",
+    "New: Settings > Voice > Voice model lists the voices installed on your phone so you can lock in the best male voice and keep it for every alert.",
+    "Improved: a real male voice is left at its natural pitch instead of being slowed down, so it sounds clearer and less robotic.",
+    "Improved: if the chosen voice cannot speak, the app tries the next-best male voice before falling back to the phone default.",
+    "Removed: the floating + button has been removed for a cleaner screen. Use Add on the Schedule tab."
   ]
 }

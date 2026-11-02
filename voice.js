@@ -149,6 +149,24 @@
     return sorted[0] || null;
   }
 
+  function pickFromPool(pool, wantG) {
+    if (!pool.length) return null;
+    // Local voices are the only ones guaranteed to synthesize. Prefer a local
+    // unlabelled voice (pitch-adjusted) over a remote "male" voice that may
+    // answer with synthesis-failed on a phone with no connection.
+    const local = pool.filter((v) => v.localService);
+    const base = local.length ? local : pool;
+    if (wantG) {
+      const exact = base.filter((v) => voiceGenderOf(v) === wantG);
+      if (exact.length) {
+        const voice = bestOf(exact, wantG);
+        return { voice, matched: true, approximate: false, local: !!voice.localService };
+      }
+    }
+    const voice = bestOf(base, wantG);
+    return { voice, matched: false, approximate: !!wantG, local: !!voice.localService };
+  }
+
   /* Never returns null while the phone has at least one voice. `matched` says
      whether the chosen voice is genuinely the requested gender; when false the
      caller lowers/raises pitch to approximate it. */
@@ -158,26 +176,13 @@
     if (!vs.length) return null;
 
     const prefs = LANGS[language] || (language && language !== "system" ? [language, "en"] : ["en"]);
-    let fallbackPool = null;
-
     for (const p of prefs) {
       const pool = vs.filter((v) => String(v.lang).toLowerCase().startsWith(String(p).toLowerCase()));
-      if (!pool.length) continue;
-      if (wantG) {
-        const exact = pool.filter((v) => voiceGenderOf(v) === wantG);
-        if (exact.length) return { voice: bestOf(exact, wantG), matched: true, approximate: false };
-      }
-      if (!fallbackPool) fallbackPool = pool;
+      const picked = pickFromPool(pool, wantG);
+      if (picked) return picked;
     }
 
-    if (wantG) {
-      const cross = vs.filter((v) => voiceGenderOf(v) === wantG);
-      if (cross.length) {
-        return { voice: bestOf(cross, wantG), matched: true, approximate: false, crossLanguage: true };
-      }
-    }
-
-    return { voice: bestOf(fallbackPool || vs, wantG), matched: false, approximate: !!wantG };
+    return pickFromPool(vs, wantG);
   }
 
   function normalize(text) {
@@ -208,43 +213,24 @@
     return voiceGenderOf(picked.voice) === "male" ? 1.16 : 1.1;
   }
 
-  function speak(text, cfg) {
-    cfg = cfg || {};
-    return new Promise(async (resolve) => {
-      const s = synth();
-      const spoken = normalize(text);
-      if (!s) return resolve({ ok: false, error: "no-speech-engine" });
-      if (!spoken) return resolve({ ok: false, error: "empty text" });
+  function normalizeLang(value) {
+    const lang = String(value || "").replace(/_/g, "-").trim();
+    return /^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$/i.test(lang) ? lang : "en-US";
+  }
 
-      const wantG = (cfg.gender === "female" || cfg.gender === "male") ? cfg.gender : null;
-      const lang = cfg.language || "en";
-
-      // Chrome (especially Android) can swallow an utterance queued in the
-      // same tick as cancel(). Let the engine settle, and clear a stuck pause.
-      if (s.speaking || s.pending) {
-        try { s.cancel(); } catch (e) {}
-        await delay(SETTLE_MS);
-      }
-      try { s.resume(); } catch (e) {}
-
-      await awaitVoices(voices().length ? 400 : 2600);
-
-      const picked = pickVoice(lang, cfg.gender || "default");
-      if (!picked || !picked.voice) return resolve({ ok: false, error: "no-voices" });
-      const v = picked.voice;
-
-      let rate = 0.86;
-      try {
-        if (typeof WR !== "undefined" && WR.voiceRate) rate = WR.voiceRate(cfg.speed, cfg.gender || "default");
-      } catch (e) {}
-      const pitch = pitchFor(wantG, picked);
-
+  /* One speak attempt. Resolves as soon as speech starts, or with a reason if
+     the phone's engine refuses before starting. */
+  function attemptSpeak(s, spoken, settings) {
+    return new Promise((resolve) => {
       const u = new SpeechSynthesisUtterance(spoken);
-      u.voice = v;
-      u.lang = v.lang || (typeof WR !== "undefined" && WR.ttsLang ? WR.ttsLang(lang) : "en-US") || "en-US";
-      u.rate = Math.min(2, Math.max(0.5, rate));
-      u.pitch = Math.min(2, Math.max(0.1, pitch));
-      u.volume = normalizeVolume(cfg.volume);
+      if (settings.voice) u.voice = settings.voice;
+      // Leave lang unset on the last-ditch attempt: the phone then uses its
+      // own default voice/locale, which is the combination Android accepts
+      // most often.
+      if (settings.lang) u.lang = normalizeLang(settings.lang);
+      u.rate = Math.min(2, Math.max(0.5, settings.rate));
+      u.pitch = Math.min(2, Math.max(0.1, settings.pitch));
+      u.volume = settings.volume;
 
       currentUtterance = u;
       let settled = false;
@@ -257,15 +243,12 @@
         lastStartAt = Date.now();
         if (currentUtterance === u) currentUtterance = null;
         resolve(Object.assign({
-          voice: v.name,
-          voiceUri: v.voiceURI,
+          voice: settings.voice ? settings.voice.name : "phone default",
+          voiceUri: settings.voice ? settings.voice.voiceURI : "",
           lang: u.lang,
           rate: u.rate,
           pitch: u.pitch,
-          gender: voiceGenderOf(v),
-          matched: picked.matched,
-          approximate: !!wantG && !picked.matched,
-          genderMatched: !wantG || picked.matched
+          gender: settings.voice ? voiceGenderOf(settings.voice) : null
         }, result));
       };
 
@@ -273,8 +256,6 @@
       u.onend = () => finish({ ok: true, ended: true });
       u.onerror = (e) => finish({ ok: false, error: (e && (e.error || e.message)) || "speech-failed" });
 
-      // Resolve when speech actually starts. If the phone silently refuses,
-      // report that clearly instead of pretending the test played.
       timer = setTimeout(() => {
         let active = false;
         try { active = !!(s.speaking || s.pending); } catch (e) {}
@@ -294,6 +275,88 @@
     });
   }
 
+  function speak(text, cfg) {
+    cfg = cfg || {};
+    return new Promise(async (resolve) => {
+      const s = synth();
+      const spoken = normalize(text);
+      if (!s) return resolve({ ok: false, error: "no-speech-engine" });
+      if (!spoken) return resolve({ ok: false, error: "empty text" });
+
+      const wantG = (cfg.gender === "female" || cfg.gender === "male") ? cfg.gender : null;
+      const lang = cfg.language || "en";
+      const volume = normalizeVolume(cfg.volume);
+
+      // Stop a run that is genuinely in progress, then give Android time to
+      // settle. The retry below covers the rare cancel/speak race that returns
+      // "synthesis-failed".
+      if (s.speaking || s.pending) {
+        try { s.cancel(); } catch (e) {}
+        // Wait until the old utterance really stops before starting a new one.
+        for (let i = 0; i < 12; i++) {
+          let busy = false;
+          try { busy = !!(s.speaking || s.pending); } catch (e) {}
+          if (!busy) break;
+          await delay(50);
+        }
+        await delay(SETTLE_MS * 2);
+      }
+      try { s.resume(); } catch (e) {}
+
+      await awaitVoices(voices().length ? 400 : 2600);
+
+      const picked = pickVoice(lang, cfg.gender || "default");
+      if (!picked || !picked.voice) return resolve({ ok: false, error: "no-voices" });
+
+      let rate = 0.86;
+      try {
+        if (typeof WR !== "undefined" && WR.voiceRate) rate = WR.voiceRate(cfg.speed, cfg.gender || "default");
+      } catch (e) {}
+      const pitch = pitchFor(wantG, picked);
+
+      const fallbackPitch = wantG === "male" ? 0.72 : wantG === "female" ? 1.08 : 1.0;
+      const baseLang = (typeof WR !== "undefined" && WR.ttsLang ? WR.ttsLang(lang) : "en-US") || "en-US";
+
+      const attempts = [
+        { voice: picked.voice, lang: picked.voice.lang || baseLang, rate, pitch },
+        // Android's safest path: no explicit voice and no forced locale, just
+        // the phone's own default engine, with pitch carrying the gender.
+        { voice: null, lang: null, rate, pitch: fallbackPitch }
+      ];
+
+      let last = null;
+      for (let i = 0; i < attempts.length; i++) {
+        if (i > 0) {
+          try { s.cancel(); } catch (e) {}
+          await delay(SETTLE_MS * 4);
+          try { s.resume(); } catch (e) {}
+        }
+        const attempt = Object.assign({ volume }, attempts[i]);
+        const res = await attemptSpeak(s, spoken, attempt);
+        if (res.ok) {
+          return resolve(Object.assign({}, res, {
+            selectedVoice: picked.voice.name,
+            matched: picked.matched,
+            approximate: !!wantG && !picked.matched,
+            genderMatched: !wantG || picked.matched,
+            fallback: i > 0
+          }));
+        }
+        last = res;
+        // These will not improve by retrying.
+        if (res.error === "not-allowed" || res.error === "empty text") break;
+      }
+
+      resolve({
+        ok: false,
+        error: (last && last.error) || "speech-failed",
+        voice: picked.voice.name,
+        selectedVoice: picked.voice.name,
+        tries: attempts.length
+      });
+    });
+  }
+
   function stop() {
     const s = synth();
     if (!s) return;
@@ -306,24 +369,16 @@
     try { return !!(s && (s.speaking || (s.pending && Date.now() - lastStartAt < 1500))); } catch (e) { return false; }
   }
 
-  /* Browsers that require a gesture (iOS Safari, Chrome Android) only allow
-     speech after one. Prime the engine with an inaudible utterance on the
-     first tap, so a reminder that fires later can actually talk. */
+  /* Browsers that require a gesture (iOS Safari, Chrome Android) keep the
+     engine paused until one. Just resume it here. Speaking a silent utterance
+     to "prime" the engine can leave Android in a failed state, and the real
+     Test voice call is already inside a gesture, so it needs no primer. */
   function unlock() {
     const s = synth();
     if (!s) return false;
     try { s.resume(); } catch (e) {}
-    if (unlocked) return true;
     unlocked = true;
     bindVoicesChanged();
-    try {
-      const u = new SpeechSynthesisUtterance(" ");
-      u.volume = 0;
-      u.rate = 1;
-      u.pitch = 1;
-      u.lang = "en-US";
-      s.speak(u);
-    } catch (e) {}
     return true;
   }
 

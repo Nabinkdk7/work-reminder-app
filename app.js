@@ -1565,8 +1565,10 @@
       } else {
         el.textContent = "Playing with " + (res.voice || "the system voice") + ".";
       }
-    } else if (res.error === "speech-did-not-start") {
-      el.textContent = "The phone did not start speech. Tap Test voice again, and check that a text-to-speech voice is installed in your phone settings.";
+    } else if (res.error === "synthesis-failed" || res.error === "speech-did-not-start" || res.error === "audio-busy") {
+      el.textContent = "The phone's speech engine refused to start. Tap Test voice once more. If it keeps failing, set Voice to System default, or install a text-to-speech voice in your phone settings.";
+    } else if (res.error === "not-allowed") {
+      el.textContent = "The phone blocked speech. Tap Test voice again so the browser receives a direct tap, then try the reminder.";
     } else if (res.error === "no-voices" || res.error === "no-speech-engine") {
       el.textContent = "This browser has no speech voices installed. Try Chrome, Edge or Safari.";
     } else {

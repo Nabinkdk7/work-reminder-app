@@ -1,11 +1,11 @@
 {
-  "version": "1.3.0",
-  "released": "2026-11-02",
+  "version": "1.3.1",
+  "released": "2026-11-03",
   "notes": [
-    "Fixed: the male voice now works on phones that do not name a male voice. It uses the best local voice and adjusts pitch instead of failing.",
-    "Improved: Android and iPhone speech voices are detected even when the phone publishes them late.",
-    "Improved: speech starts reliably after a pause, a chime, or another alert.",
-    "New: the voice test now names the voice it used and explains when it is an approximate match.",
-    "Updated: the GitHub repository link in the footer now points to work-reminder-app."
+    "Fixed: the mobile voice test no longer fails with synthesis-failed. If the selected voice is refused, it automatically retries with the phone's default voice.",
+    "Improved: speech now prefers voices stored on the phone, so it works without mobile data.",
+    "Improved: the engine is no longer cancelled right before speaking, which Android could reject.",
+    "Improved: the male voice still falls back to a pitch-adjusted local voice when the phone has no named male voice.",
+    "Updated: the GitHub repository link points to work-reminder-app."
   ]
 }

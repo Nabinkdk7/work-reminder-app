@@ -1541,6 +1541,7 @@
 
   async function testVoice() {
     Sound.unlock();
+    try { Voice.unlock(); } catch (e) {}
     const el = $("voiceStatus");
     if (el) {
       el.hidden = false;
@@ -1557,10 +1558,15 @@
     if (!res) {
       el.textContent = "Could not start the voice test.";
     } else if (res.ok) {
-      el.textContent = "Playing with " + (res.voice || "the system voice") + ".";
-    } else if (res.error === "no-voice-for-gender") {
-      el.textContent = "No " + (state.settings.voice.gender === "male" ? "male" : "female") +
-        " voice is installed — choose System or change the language.";
+      if (res.approximate) {
+        el.textContent = "Playing with " + (res.voice || "the closest system voice") +
+          " - this phone has no separate " + (state.settings.voice.gender === "male" ? "male" : "female") +
+          " voice, so the pitch is adjusted.";
+      } else {
+        el.textContent = "Playing with " + (res.voice || "the system voice") + ".";
+      }
+    } else if (res.error === "speech-did-not-start") {
+      el.textContent = "The phone did not start speech. Tap Test voice again, and check that a text-to-speech voice is installed in your phone settings.";
     } else if (res.error === "no-voices" || res.error === "no-speech-engine") {
       el.textContent = "This browser has no speech voices installed. Try Chrome, Edge or Safari.";
     } else {

@@ -6,7 +6,7 @@ rebuilt for phones with a responsive liquid-glass interface and mobile-first
 tools.
 
 **Dev by [Nabin Khadka](https://nabinkhadka.com)** ·
-[GitHub Repository](https://github.com/Nabinkdk7/Work-Reminder-Extension)
+[GitHub Repository](https://github.com/Nabinkdk7/work-reminder-app)
 
 ---
 
@@ -202,4 +202,4 @@ opposite voice.
 Built and maintained by **Nabin Khadka** — [nabinkhadka.com](https://nabinkhadka.com).
 
 If Work Reminder helps your day, star the
-[GitHub repository](https://github.com/Nabinkdk7/Work-Reminder-Extension).
+[GitHub repository](https://github.com/Nabinkdk7/work-reminder-app).

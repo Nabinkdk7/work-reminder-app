@@ -1,11 +1,11 @@
 {
-  "version": "1.2.0",
+  "version": "1.3.0",
   "released": "2026-11-02",
   "notes": [
-    "New: bundled Inter typeface for crisper, more consistent text — online or offline.",
-    "Polished: more comfortable spacing across cards, sheets, forms and banners.",
-    "Improved: the stopwatch updates smoothly at animation-frame speed with centisecond precision.",
-    "Fixed: the stopwatch keeps exact time after pausing, reloading or returning to the app.",
-    "Polish: better wrapping on small phones and long update notices."
+    "Fixed: the male voice now works on phones that do not name a male voice. It uses the best local voice and adjusts pitch instead of failing.",
+    "Improved: Android and iPhone speech voices are detected even when the phone publishes them late.",
+    "Improved: speech starts reliably after a pause, a chime, or another alert.",
+    "New: the voice test now names the voice it used and explains when it is an approximate match.",
+    "Updated: the GitHub repository link in the footer now points to work-reminder-app."
   ]
 }

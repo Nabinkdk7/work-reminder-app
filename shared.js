@@ -9,10 +9,10 @@
 
   const APP = {
     name: "Work Reminder",
-    version: "1.2.0",
+    version: "1.3.0",
     developer: "Nabin Khadka",
     devUrl: "https://nabinkhadka.com",
-    repoUrl: "https://github.com/Nabinkdk7/Work-Reminder-Extension",
+    repoUrl: "https://github.com/Nabinkdk7/work-reminder-app",
     storageKey: "workreminderapp:v1",
   };
 
@@ -433,9 +433,11 @@
 
   const VOICE_GENDER_HINTS = {
     female: ["female", "zira", "samantha", "victoria", "karen", "moira", "tessa", "fiona", "veena", "aditi", "ava", "susan", "kate", "emily", "serena", "heera", "lekha", "aria", "jenny", "hazel", "allison", "eva", "paulina", "amelie", "denise", "joanna", "kimberly", "salli", "amy", "raveena", "priya", "kalpana", "neerja", "zhiyu", "huihui", "yaoyao",
-      "google us english", "google uk english female", "sonia", "anais", "marisol", "lucia", "camila", "valentina", "sofia", "isabella", "gabriela", "mia", "ella", "olivia"],
+      "google us english", "google uk english female", "sonia", "anais", "marisol", "lucia", "camila", "valentina", "sofia", "isabella", "gabriela", "mia", "ella", "olivia",
+      "zoe", "nicky", "martha"],
     male: ["male", "david", "daniel", "mark", "alex", "fred", "thomas", "rishi", "ravi", "hemant", "george", "james", "roger", "ryan", "davis", "christopher", "brian", "neil", "arthur", "arun", "madhur", "valluvar", "jian", "kangkang", "yunyang",
-      "google uk english male", "guy", "steffan", "antonio", "diego", "jorge", "liam", "tony", "henry", "mike", "tom", "bob"],
+      "google uk english male", "guy", "steffan", "antonio", "diego", "jorge", "liam", "tony", "henry", "mike", "tom", "bob",
+      "aaron", "adam", "gordon", "oliver", "maged", "tarik", "yuri", "dmitri", "pavel"],
   };
   function detectVoiceGender(name) {
     const n = String(name || "").toLowerCase();

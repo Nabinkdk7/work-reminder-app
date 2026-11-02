@@ -1,0 +1,11 @@
+{
+  "version": "1.2.0",
+  "released": "2026-11-02",
+  "notes": [
+    "New: bundled Inter typeface for crisper, more consistent text — online or offline.",
+    "Polished: more comfortable spacing across cards, sheets, forms and banners.",
+    "Improved: the stopwatch updates smoothly at animation-frame speed with centisecond precision.",
+    "Fixed: the stopwatch keeps exact time after pausing, reloading or returning to the app.",
+    "Polish: better wrapping on small phones and long update notices."
+  ]
+}

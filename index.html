@@ -1,0 +1,641 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5">
+<title>Work Reminder</title>
+<meta name="description" content="A premium mobile workday reminder with voice alerts, rich chimes, quick reminders and focus tools.">
+<meta name="theme-color" content="#070b16">
+<meta name="color-scheme" content="dark light">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="preload" href="fonts/inter-latin-var.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Work Reminder">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<svg class="sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.8 12 3.5l9 7.3"/><path d="M5.5 9.6V20a.9.9 0 0 0 .9.9h11.2a.9.9 0 0 0 .9-.9V9.6"/><path d="M9.7 20.9v-6h4.6v6"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18.2 8.3a6.2 6.2 0 1 0-12.4 0c0 6.4-2.6 8.2-2.6 8.2h17.6s-2.6-1.8-2.6-8.2"/><path d="M13.7 20.5a2 2 0 0 1-3.4 0"/></symbol>
+  <symbol id="i-bell-off" viewBox="0 0 24 24"><path d="M18.2 8.3a6.2 6.2 0 0 0-9-5.4"/><path d="M6.6 6.6A6.2 6.2 0 0 0 5.8 8.3c0 6.4-2.6 8.2-2.6 8.2h13"/><path d="M13.7 20.5a2 2 0 0 1-3.4 0"/><path d="m2.5 2.5 19 19"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3.2" y="4.8" width="17.6" height="15.7" rx="2.6"/><path d="M3.2 9.6h17.6"/><path d="M8 3v3.2"/><path d="M16 3v3.2"/></symbol>
+  <symbol id="i-timer" viewBox="0 0 24 24"><circle cx="12" cy="13" r="7.6"/><path d="M12 9.3V13l2.6 1.6"/><path d="M9.4 2.8h5.2"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.6"/><path d="M12 7.3V12l3.4 2"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.1"/><path d="M19.5 14.6a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.11-1.56 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.56-1.11 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.56 1.03H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.56 1.03z"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M5 12h14"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M8 5.3v13.4L19 12z"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><rect fill="currentColor" stroke="none" x="6.7" y="5" width="3.8" height="14" rx="1.3"/><rect fill="currentColor" stroke="none" x="13.5" y="5" width="3.8" height="14" rx="1.3"/></symbol>
+  <symbol id="i-volume" viewBox="0 0 24 24"><path d="M11.5 5.2 6.8 9.1H3.4v5.8h3.4l4.7 3.9z"/><path d="M15.6 8.7a4.8 4.8 0 0 1 0 6.6"/><path d="M18.4 6a8.6 8.6 0 0 1 0 12"/></symbol>
+  <symbol id="i-volume-off" viewBox="0 0 24 24"><path d="M11.5 5.2 6.8 9.1H3.4v5.8h3.4l4.7 3.9z"/><path d="m16 9.4 4.6 5.2"/><path d="m20.6 9.4-4.6 5.2"/></symbol>
+  <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9.3 6 6 6-6"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7.2"/><path d="m16.3 16.3 4.7 4.7"/></symbol>
+  <symbol id="i-briefcase" viewBox="0 0 24 24"><rect x="3.2" y="7.6" width="17.6" height="12.6" rx="2.6"/><path d="M8.6 7.6V5.7A1.7 1.7 0 0 1 10.3 4h3.4a1.7 1.7 0 0 1 1.7 1.7v1.9"/><path d="M3.2 12.6h17.6"/></symbol>
+  <symbol id="i-coffee" viewBox="0 0 24 24"><path d="M5 8.6h11v5.5a5.5 5.5 0 0 1-5.5 5.5A5.5 5.5 0 0 1 5 14.1z"/><path d="M16 9.6h1.7a2.8 2.8 0 0 1 0 5.6H16"/><path d="M8.2 3.2v2.1"/><path d="M11.6 3.2v2.1"/></symbol>
+  <symbol id="i-droplet" viewBox="0 0 24 24"><path d="M12 3.2s6.2 6.6 6.2 11a6.2 6.2 0 0 1-12.4 0c0-4.4 6.2-11 6.2-11z"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3.4 2.6 5.3 5.9.85-4.25 4.15 1 5.85L12 16.8l-5.25 2.75 1-5.85L3.5 9.55l5.9-.85z"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11.2" height="11.2" rx="2.4"/><path d="M5.6 15h-.7A1.9 1.9 0 0 1 3 13.1V4.9A1.9 1.9 0 0 1 4.9 3h8.2A1.9 1.9 0 0 1 15 4.9v.7"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M16.6 3.9 20.1 7.4 8.4 19.1l-4.6 1.1 1.1-4.6z"/><path d="m14.6 5.9 3.5 3.5"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M9 7V5.4A1.4 1.4 0 0 1 10.4 4h3.2A1.4 1.4 0 0 1 15 5.4V7"/><path d="M6.6 7 7.5 19.6A1.5 1.5 0 0 0 9 21h6a1.5 1.5 0 0 0 1.5-1.4L17.4 7"/><path d="M10 11v6"/><path d="M14 11v6"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.6 4.6L19 7.6"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12"/><path d="m18 6-12 12"/></symbol>
+  <symbol id="i-zap" viewBox="0 0 24 24"><path d="M13 2.5 4.6 13.4h6.2L10 21.5l8.5-11h-6.2z"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.4A8.4 8.4 0 0 1 9.6 4a8.5 8.5 0 1 0 10.4 10.4z"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.8v2.2"/><path d="M12 19v2.2"/><path d="M2.8 12h2.2"/><path d="M19 12h2.2"/><path d="m5.5 5.5 1.6 1.6"/><path d="m16.9 16.9 1.6 1.6"/><path d="m18.5 5.5-1.6 1.6"/><path d="m7.1 16.9-1.6 1.6"/></symbol>
+  <symbol id="i-auto" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="12.5" rx="2.2"/><path d="M8.5 21h7"/><path d="M12 17v4"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3.5v11"/><path d="m7.6 10.3 4.4 4.4 4.4-4.4"/><path d="M4 17.5v1.6a1.9 1.9 0 0 0 1.9 1.9h12.2a1.9 1.9 0 0 0 1.9-1.9v-1.6"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V4"/><path d="m7.6 8.4 4.4-4.4 4.4 4.4"/><path d="M4 17.5v1.6a1.9 1.9 0 0 0 1.9 1.9h12.2a1.9 1.9 0 0 0 1.9-1.9v-1.6"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><rect x="6.3" y="2.4" width="11.4" height="19.2" rx="2.8"/><path d="M10.4 5.2h3.2"/><path d="M11 18.6h2"/></symbol>
+  <symbol id="i-github" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M12 2.2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.18-3.37-1.18-.45-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.61.07-.61 1 .07 1.53 1.03 1.53 1.03.9 1.53 2.35 1.09 2.92.83.09-.65.35-1.09.64-1.34-2.22-.25-4.55-1.11-4.55-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.02a9.6 9.6 0 0 1 5 0c1.91-1.29 2.75-1.02 2.75-1.02.55 1.38.2 2.4.1 2.65.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85v2.74c0 .27.18.58.69.48A10 10 0 0 0 12 2.2z"/></symbol>
+  <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="m12 3 1.7 4.3L18 9l-4.3 1.7L12 15l-1.7-4.3L6 9l4.3-1.7z"/><path d="m18.5 14.5.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z"/><path d="m5 15 .8 1.7L7.5 17.5l-1.7.8L5 20l-.8-1.7L2.5 17.5l1.7-.8z"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 15.5V3.8"/><path d="m8 7.8 4-4 4 4"/><path d="M5 13v5.7A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.3V13"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11.5A8 8 0 0 0 6.3 6.3L4 8.5"/><path d="M4 4.5v4h4"/><path d="M4 12.5a8 8 0 0 0 13.7 5.2l2.3-2.2"/><path d="M20 19.5v-4h-4"/></symbol>
+  <symbol id="i-briefcase-small" viewBox="0 0 24 24"><rect x="3.2" y="7.6" width="17.6" height="12.6" rx="2.6"/><path d="M8.6 7.6V5.7A1.7 1.7 0 0 1 10.3 4h3.4a1.7 1.7 0 0 1 1.7 1.7v1.9"/></symbol>
+</svg>
+
+<header class="appbar">
+  <div class="brand">
+    <img class="brand-logo" src="icons/icon-192.png" width="40" height="40" alt="">
+    <div class="brand-text">
+      <h1>Work <span>Reminder</span></h1>
+      <p id="headerSub">Stay on track, get more done</p>
+    </div>
+  </div>
+  <div class="appbar-actions">
+    <button id="dndBtn" class="icon-btn" type="button" aria-label="Do Not Disturb" title="Do Not Disturb">
+      <svg class="ic" aria-hidden="true"><use href="#i-pause"></use></svg>
+      <span class="dot-badge hidden" id="dndDot"></span>
+    </button>
+    <button id="alertsBtn" class="icon-btn" type="button" aria-label="Notification settings" title="Notification settings">
+      <svg class="ic" aria-hidden="true"><use href="#i-bell"></use></svg>
+      <span class="dot-badge warn hidden" id="alertsDot"></span>
+    </button>
+  </div>
+</header>
+
+<main class="app">
+
+  <!-- HOME -->
+  <section id="view-home" class="view active" data-view="home">
+    <div class="welcome">
+      <div>
+        <p class="eyebrow" id="greeting">Good morning</p>
+        <h2 id="todayDate">Today</h2>
+      </div>
+      <span class="chip soft" id="homeBadge">—</span>
+    </div>
+
+    <div id="alertsStrip" class="notice hidden">
+      <div class="notice-icon"><svg class="ic" aria-hidden="true"><use href="#i-bell"></use></svg></div>
+      <div class="grow">
+        <b>Turn on alerts</b>
+        <p>Get a notification and sound when a reminder is due.</p>
+      </div>
+      <button id="enableAlertsBtn" class="btn small primary" type="button">Enable</button>
+    </div>
+
+    <div id="installStrip" class="notice install hidden">
+      <div class="notice-icon"><svg class="ic" aria-hidden="true"><use href="#i-phone"></use></svg></div>
+      <div class="grow">
+        <b>Install Work Reminder</b>
+        <p>Add it to your home screen for full-screen, one-tap access.</p>
+      </div>
+      <button id="installStripBtn" class="btn small primary" type="button">Install</button>
+    </div>
+
+    <div id="updateStrip" class="notice update hidden">
+      <div class="notice-icon"><svg class="ic" aria-hidden="true"><use href="#i-refresh"></use></svg></div>
+      <div class="grow">
+        <b id="updateStripTitle">Update available</b>
+        <p id="updateStripText" aria-live="polite">A new version of Work Reminder is ready.</p>
+      </div>
+      <button id="updateStripBtn" class="btn small primary" type="button">Update</button>
+      <button id="updateStripClose" class="icon-btn tiny" type="button" aria-label="Dismiss update notice">
+        <svg class="ic" aria-hidden="true"><use href="#i-close"></use></svg>
+      </button>
+    </div>
+
+    <article class="card next-card" id="nextCard">
+      <div class="next-top">
+        <span class="label">Next up</span>
+        <span class="chip subtle" id="nextWhen">—</span>
+      </div>
+      <div class="next-main">
+        <div class="next-time" id="nextTime">--:--</div>
+        <div class="next-count" id="nextCountdown">No reminders yet</div>
+      </div>
+      <div class="next-title-row">
+        <span class="cat-dot" id="nextDot"></span>
+        <h3 id="nextTitle">Nothing scheduled</h3>
+      </div>
+      <p class="muted next-message" id="nextMessage">Add your first reminder to get started.</p>
+      <div class="next-meta" id="nextMeta"></div>
+      <div class="next-actions" id="nextActions">
+        <button id="nextSnooze" class="btn small" type="button">Snooze</button>
+        <button id="nextDone" class="btn small" type="button">Mark done</button>
+        <button id="nextEdit" class="icon-btn tiny" type="button" aria-label="Edit next reminder"><svg class="ic" aria-hidden="true"><use href="#i-edit"></use></svg></button>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="card-head">
+        <h3><svg class="ic" aria-hidden="true"><use href="#i-zap"></use></svg> Quick reminder</h3>
+        <span class="chip subtle">one-off</span>
+      </div>
+      <p class="muted small">A single nudge — no schedule needed.</p>
+      <div id="quickChips" class="chip-row" role="group" aria-label="Quick reminder delay"></div>
+      <div class="quick-form">
+        <input id="quickText" type="text" maxlength="160" placeholder="What should I remind you about?" autocomplete="off">
+        <button id="quickAdd" class="btn primary icon-only" type="button" aria-label="Add quick reminder"><svg class="ic" aria-hidden="true"><use href="#i-plus"></use></svg></button>
+      </div>
+      <p id="quickStatus" class="helper" role="status"></p>
+    </article>
+
+    <div class="stat-row">
+      <div class="stat-card">
+        <span>Screen time</span>
+        <b id="screenTimeHome">—</b>
+      </div>
+      <div class="stat-card">
+        <span id="workdayHomeLabel">Workday</span>
+        <b id="workdayHome">—</b>
+      </div>
+    </div>
+
+    <article class="card">
+      <div class="card-head">
+        <h3><svg class="ic" aria-hidden="true"><use href="#i-calendar"></use></svg> Today</h3>
+        <span class="chip subtle" id="todayCount">0</span>
+      </div>
+      <div class="progress"><span id="todayProgress"></span></div>
+      <ul id="todayList" class="timeline"></ul>
+      <div id="todayEmpty" class="empty hidden">
+        <div class="empty-ic"><svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg></div>
+        <b>Nothing on the schedule</b>
+        <p>Tap the + button to add a reminder.</p>
+      </div>
+    </article>
+  </section>
+
+  <!-- SCHEDULE -->
+  <section id="view-schedule" class="view" data-view="schedule">
+    <div class="view-head">
+      <div><p class="eyebrow">Plan</p><h2>Schedule</h2></div>
+      <button id="addReminderBtn" class="btn primary small" type="button"><svg class="ic" aria-hidden="true"><use href="#i-plus"></use></svg> Add</button>
+    </div>
+
+    <div class="search-box">
+      <svg class="ic" aria-hidden="true"><use href="#i-search"></use></svg>
+      <input id="scheduleSearch" type="search" placeholder="Search reminders" autocomplete="off" aria-label="Search reminders">
+    </div>
+
+    <div id="filterChips" class="chip-row scroll" role="group" aria-label="Filter reminders"></div>
+    <p id="scheduleStatus" class="helper" role="status"></p>
+
+    <ul id="reminderList" class="reminder-list"></ul>
+    <div id="reminderEmpty" class="empty hidden">
+      <div class="empty-ic"><svg class="ic" aria-hidden="true"><use href="#i-bell"></use></svg></div>
+      <b>No reminders found</b>
+      <p>Try another search or add a new reminder.</p>
+    </div>
+
+    <article class="card office-card">
+      <div class="card-head">
+        <h3><svg class="ic" aria-hidden="true"><use href="#i-briefcase"></use></svg> Office hours</h3>
+        <button id="editOfficeBtn" class="link-btn" type="button">Edit</button>
+      </div>
+      <div id="officeSummary" class="office-summary"></div>
+    </article>
+
+    <article class="card">
+      <div class="card-head">
+        <h3><svg class="ic" aria-hidden="true"><use href="#i-sparkles"></use></svg> Suggested workday</h3>
+      </div>
+      <p class="muted small">Build a full day of reminders from your office hours. You can review everything before adding it.</p>
+      <button id="suggestBtn" class="btn full" type="button">Create suggested schedule</button>
+      <p id="suggestStatus" class="helper" role="status"></p>
+    </article>
+  </section>
+
+  <!-- FOCUS -->
+  <section id="view-focus" class="view" data-view="focus">
+    <div class="view-head">
+      <div><p class="eyebrow">Time &amp; focus</p><h2>Focus</h2></div>
+      <span id="clockZone" class="chip subtle">local</span>
+    </div>
+
+    <article class="card clock-card">
+      <div class="clock-time" id="clockTime">--:--:--</div>
+      <div class="clock-date" id="clockDate"></div>
+      <div class="stat-row inside">
+        <div class="stat">
+          <span>Screen time today</span>
+          <b id="screenTime">—</b>
+        </div>
+        <div class="stat">
+          <span id="workdayLabel">Workday</span>
+          <b id="workdayLeft">—</b>
+        </div>
+      </div>
+      <div class="progress thin"><span id="workdayBar"></span></div>
+      <p class="helper" id="workdayNote"></p>
+    </article>
+
+    <article class="card">
+      <div class="card-head">
+        <h3>Stopwatch</h3>
+        <span class="chip subtle" id="swState">Idle</span>
+      </div>
+      <div class="sw-time" id="swTime" role="timer" aria-label="Stopwatch elapsed time"><span id="swMain">0:00</span><span class="sw-frac" id="swFrac">.00</span></div>
+      <div class="btn-row">
+        <button id="swToggle" class="btn primary grow" type="button">Start</button>
+        <button id="swLap" class="btn" type="button" disabled>Lap</button>
+        <button id="swReset" class="btn" type="button">Reset</button>
+      </div>
+      <ul id="swLaps" class="lap-list"></ul>
+    </article>
+
+    <article class="card row-card">
+      <div class="grow">
+        <h3>Keep screen awake</h3>
+        <p class="muted small">Uses the screen wake lock while you focus. The app still needs to stay open for exact-time alerts.</p>
+      </div>
+      <label class="switch"><input type="checkbox" id="wakeToggle"><span></span></label>
+    </article>
+    <p id="wakeStatus" class="helper" role="status"></p>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="view-settings" class="view" data-view="settings">
+    <div class="view-head">
+      <div><p class="eyebrow">Personalize</p><h2>Settings</h2></div>
+      <span class="chip subtle" id="appVersionChip">v1.2.0</span>
+    </div>
+
+    <article class="card">
+      <div class="card-head">
+        <h3><svg class="ic" aria-hidden="true"><use href="#i-bell"></use></svg> Notifications &amp; sound</h3>
+        <span class="chip" id="permBadge">—</span>
+      </div>
+      <p id="permText" class="muted small"></p>
+      <button id="enableAlertsBtn2" class="btn primary full" type="button">Enable notifications</button>
+      <div class="field">
+        <span>Reminder notifications</span>
+        <label class="switch"><input type="checkbox" id="notifToggle"><span></span></label>
+      </div>
+      <label class="field">
+        <span>Alert sound</span>
+        <select id="soundSelect"></select>
+      </label>
+      <div class="field">
+        <span>Sound volume</span>
+        <div class="range-wrap"><input id="soundVolume" type="range" min="0" max="100" step="1"><b id="soundVolLabel">80%</b></div>
+      </div>
+      <div class="btn-row">
+        <button id="previewSoundBtn" class="btn grow" type="button"><svg class="ic" aria-hidden="true"><use href="#i-play"></use></svg> Test sound</button>
+        <button id="testNotifBtn" class="btn grow" type="button"><svg class="ic" aria-hidden="true"><use href="#i-bell"></use></svg> Test notification</button>
+      </div>
+      <div class="field">
+        <span>Vibration</span>
+        <label class="switch"><input type="checkbox" id="hapticsToggle"><span></span></label>
+      </div>
+      <p class="helper">Phones can pause background web apps. Keep Work Reminder open for exact-time alerts; installing it to your home screen keeps it one tap away.</p>
+    </article>
+
+    <article class="card">
+      <div class="card-head">
+        <h3><svg class="ic" aria-hidden="true"><use href="#i-volume"></use></svg> Voice</h3>
+        <span class="chip" id="voiceBadge">On</span>
+      </div>
+      <div class="field">
+        <span>Speak reminders</span>
+        <label class="switch"><input type="checkbox" id="voiceToggle"><span></span></label>
+      </div>
+      <label class="field">
+        <span>Language</span>
+        <select id="voiceLang">
+          <option value="en">English</option>
+          <option value="ne">Nepali</option>
+          <option value="hi">Hindi</option>
+          <option value="system">Device default</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>Voice</span>
+        <select id="voiceGender">
+          <option value="default">System default</option>
+          <option value="female">Female</option>
+          <option value="male">Male</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>Speed</span>
+        <select id="voiceSpeed">
+          <option value="slow">Slow</option>
+          <option value="normal">Normal</option>
+          <option value="fast">Fast</option>
+        </select>
+      </label>
+      <div class="field">
+        <span>Voice volume</span>
+        <div class="range-wrap"><input id="voiceVolume" type="range" min="0" max="100" step="1"><b id="voiceVolLabel">80%</b></div>
+      </div>
+      <button id="testVoiceBtn" class="btn full" type="button"><svg class="ic" aria-hidden="true"><use href="#i-volume"></use></svg> Test voice</button>
+      <p id="voiceStatus" class="helper" role="status"></p>
+    </article>
+
+    <article class="card">
+      <div class="card-head">
+        <h3><svg class="ic" aria-hidden="true"><use href="#i-sun"></use></svg> Appearance</h3>
+      </div>
+      <div class="field stack">
+        <span>Theme</span>
+        <div class="seg" id="themeSeg">
+          <button type="button" data-theme-set="dark"><svg class="ic" aria-hidden="true"><use href="#i-moon"></use></svg> Dark</button>
+          <button type="button" data-theme-set="light"><svg class="ic" aria-hidden="true"><use href="#i-sun"></use></svg> Light</button>
+          <button type="button" data-theme-set="system"><svg class="ic" aria-hidden="true"><use href="#i-auto"></use></svg> Auto</button>
+        </div>
+      </div>
+      <div class="field stack">
+        <span>Time format</span>
+        <div class="seg" id="hourSeg">
+          <button type="button" data-hour="12">12 hour</button>
+          <button type="button" data-hour="24">24 hour</button>
+        </div>
+      </div>
+      <label class="field">
+        <span>Default snooze</span>
+        <select id="snoozeSelect">
+          <option value="5">5 min</option>
+          <option value="10">10 min</option>
+          <option value="15">15 min</option>
+          <option value="30">30 min</option>
+        </select>
+      </label>
+    </article>
+
+    <article class="card">
+      <div class="card-head">
+        <h3><svg class="ic" aria-hidden="true"><use href="#i-pause"></use></svg> Do Not Disturb</h3>
+        <span class="chip" id="dndBadge">Off</span>
+      </div>
+      <p id="dndText" class="muted small">Silence every reminder, sound and voice.</p>
+      <div class="btn-row wrap">
+        <button id="pause30" class="btn" type="button">30 min</button>
+        <button id="pause60" class="btn" type="button">1 hour</button>
+        <button id="pauseTomorrow" class="btn" type="button">Until tomorrow</button>
+        <button id="resumeNow" class="btn primary" type="button">Resume now</button>
+      </div>
+    </article>
+
+    <details class="card acc">
+      <summary><span><svg class="ic" aria-hidden="true"><use href="#i-briefcase"></use></svg> Office hours</span><svg class="ic chev" aria-hidden="true"><use href="#i-chevron"></use></svg></summary>
+      <div class="acc-body">
+        <div class="grid-2">
+          <label class="field stack"><span>Office start</span><input type="time" id="offStart"></label>
+          <label class="field stack"><span>Office end</span><input type="time" id="offEnd"></label>
+          <label class="field stack"><span>Lunch start</span><input type="time" id="offLunchStart"></label>
+          <label class="field stack"><span>Lunch end</span><input type="time" id="offLunchEnd"></label>
+        </div>
+        <div class="field stack">
+          <span>Working days</span>
+          <div id="offDays" class="day-chips"></div>
+        </div>
+        <button id="saveOfficeBtn" class="btn primary full" type="button">Save office hours</button>
+        <p id="officeStatus" class="helper" role="status"></p>
+      </div>
+    </details>
+
+    <details class="card acc">
+      <summary><span><svg class="ic" aria-hidden="true"><use href="#i-download"></use></svg> Backup &amp; data</span><svg class="ic chev" aria-hidden="true"><use href="#i-chevron"></use></svg></summary>
+      <div class="acc-body">
+        <p class="muted small">Export a JSON backup (compatible with the browser extension) or restore one on another phone.</p>
+        <div class="btn-row">
+          <button id="exportBtn" class="btn grow" type="button"><svg class="ic" aria-hidden="true"><use href="#i-share"></use></svg> Share backup</button>
+          <button id="importBtn" class="btn grow" type="button"><svg class="ic" aria-hidden="true"><use href="#i-upload"></use></svg> Import</button>
+        </div>
+        <input type="file" id="importFile" accept="application/json,.json" hidden>
+        <p id="dataStatus" class="helper" role="status"></p>
+        <button id="resetBtn" class="btn danger full" type="button">Reset app &amp; default schedule</button>
+      </div>
+    </details>
+
+    <details class="card acc" id="installCard">
+      <summary><span><svg class="ic" aria-hidden="true"><use href="#i-phone"></use></svg> Install app</span><svg class="ic chev" aria-hidden="true"><use href="#i-chevron"></use></svg></summary>
+      <div class="acc-body">
+        <p id="installNote" class="muted small">Install Work Reminder on your home screen for full-screen access and faster alerts.</p>
+        <button id="installBtn" class="btn primary full" type="button">Install on this device</button>
+        <p id="installStatus" class="helper" role="status"></p>
+      </div>
+    </details>
+
+    <article class="card update-card" id="updateCard">
+      <div class="card-head">
+        <h3><svg class="ic" aria-hidden="true"><use href="#i-refresh"></use></svg> App updates</h3>
+        <span class="chip" id="updateBadge">v1.2.0</span>
+      </div>
+      <p id="updateText" class="muted small">Updates come straight from this Vercel site. Check any time, or let the app check when you open it.</p>
+      <div id="updateNotesWrap" class="update-notes hidden">
+        <b>What's new in <span id="updateVersion">v1.2.0</span></b>
+        <ul id="updateNotes"></ul>
+      </div>
+      <div class="btn-row">
+        <button id="updateBtn" class="btn primary grow" type="button">Check for updates</button>
+        <button id="whatsNewBtn" class="btn hidden" type="button">What's new</button>
+      </div>
+      <p id="updateStatus" class="helper" role="status"></p>
+      <p class="helper">Your reminders, settings and backups are kept when the app updates. On iPhone, close and reopen the home-screen app if an update does not appear right away.</p>
+    </article>
+
+    <article class="card about">
+      <div class="about-brand">
+        <img src="icons/icon-192.png" width="44" height="44" alt="">
+        <div><b>Work Reminder</b><span id="aboutVersion">v1.2.0</span></div>
+      </div>
+      <p class="muted small">Same reminders, rich chimes and natural voice as the browser extension, rebuilt for phones.</p>
+      <div class="about-links">
+        <a id="repoLink" href="#" target="_blank" rel="noopener">GitHub Repository</a>
+        <span class="dot-sep">•</span>
+        <a id="devLink" href="#" target="_blank" rel="noopener">Dev by Nabin Khadka</a>
+      </div>
+    </article>
+  </section>
+</main>
+
+<button id="fabAdd" class="fab" type="button" aria-label="Add reminder">
+  <svg class="ic" aria-hidden="true"><use href="#i-plus"></use></svg>
+</button>
+
+<nav class="tabbar" aria-label="Main navigation">
+  <button class="tab active" type="button" data-view="home"><svg class="ic" aria-hidden="true"><use href="#i-home"></use></svg><span>Home</span></button>
+  <button class="tab" type="button" data-view="schedule"><svg class="ic" aria-hidden="true"><use href="#i-calendar"></use></svg><span>Schedule</span></button>
+  <button class="tab" type="button" data-view="focus"><svg class="ic" aria-hidden="true"><use href="#i-timer"></use></svg><span>Focus</span></button>
+  <button class="tab" type="button" data-view="settings"><svg class="ic" aria-hidden="true"><use href="#i-gear"></use></svg><span>Settings</span></button>
+</nav>
+
+<div id="alertBanner" class="alert-banner hidden" role="alert" aria-live="assertive">
+  <div class="alert-ic"><svg class="ic" aria-hidden="true"><use href="#i-bell"></use></svg></div>
+  <div class="grow">
+    <b id="alertTitle">Reminder</b>
+    <span id="alertMeta">now</span>
+  </div>
+  <button id="alertDone" class="btn small primary" type="button">Done</button>
+  <button id="alertSnooze" class="btn small" type="button">Snooze</button>
+  <button id="alertClose" class="icon-btn tiny" type="button" aria-label="Dismiss alert"><svg class="ic" aria-hidden="true"><use href="#i-close"></use></svg></button>
+</div>
+
+<div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+<!-- DND sheet -->
+<div id="dndSheet" class="sheet-wrap hidden" aria-hidden="true">
+  <div class="sheet-backdrop" data-close="dndSheet"></div>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="dndSheetTitle">
+    <div class="sheet-grab"></div>
+    <div class="sheet-head">
+      <h3 id="dndSheetTitle">Do Not Disturb</h3>
+      <button class="icon-btn" type="button" data-close="dndSheet" aria-label="Close"><svg class="ic" aria-hidden="true"><use href="#i-close"></use></svg></button>
+    </div>
+    <p class="muted" id="dndSheetText">Silence every reminder, sound and voice.</p>
+    <div class="stack-btns">
+      <button id="dnd30" class="btn full" type="button">Pause for 30 minutes</button>
+      <button id="dnd60" class="btn full" type="button">Pause for 1 hour</button>
+      <button id="dndTomorrow" class="btn full" type="button">Pause until tomorrow</button>
+      <button id="dndResume" class="btn primary full" type="button">Resume reminders now</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reminder form sheet -->
+<div id="reminderSheet" class="sheet-wrap hidden" aria-hidden="true">
+  <div class="sheet-backdrop" data-close="reminderSheet"></div>
+  <div class="sheet tall" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="sheet-grab"></div>
+    <div class="sheet-head">
+      <h3 id="sheetTitle">New reminder</h3>
+      <button class="icon-btn" type="button" data-close="reminderSheet" aria-label="Close"><svg class="ic" aria-hidden="true"><use href="#i-close"></use></svg></button>
+    </div>
+    <form id="reminderForm" novalidate>
+      <input type="hidden" id="fId" value="">
+      <div class="grid-2">
+        <label class="field stack"><span>Time</span><input type="time" id="fTime" required></label>
+        <label class="field stack"><span>Repeat</span>
+          <select id="fRepeat">
+            <option value="once">Once</option>
+            <option value="daily">Every day</option>
+            <option value="weekdays">Weekdays</option>
+            <option value="custom">Custom days</option>
+          </select>
+        </label>
+      </div>
+      <div class="field stack hidden" id="fDaysWrap">
+        <span>Days</span>
+        <div id="fDays" class="day-chips"></div>
+      </div>
+      <label class="field stack"><span>Title</span><input type="text" id="fTitle" maxlength="160" placeholder="Return cup" autocomplete="off" required></label>
+      <label class="field stack"><span>Message <em>(also spoken)</em></span><textarea id="fMessage" rows="2" maxlength="1000" placeholder="Please return your cup to the kitchen."></textarea></label>
+      <div class="field stack">
+        <span>Category</span>
+        <div id="fCategory" class="cat-picker" role="group" aria-label="Category"></div>
+      </div>
+      <div class="field">
+        <span>Sound</span>
+        <div class="inline">
+          <select id="fSound"></select>
+          <button id="fPreview" class="icon-btn tiny" type="button" aria-label="Preview sound" title="Preview sound"><svg class="ic" aria-hidden="true"><use href="#i-play"></use></svg></button>
+        </div>
+      </div>
+      <div class="field">
+        <span>Speak message</span>
+        <label class="switch"><input type="checkbox" id="fVoice"><span></span></label>
+      </div>
+      <div class="field">
+        <span>Notification</span>
+        <label class="switch"><input type="checkbox" id="fNotif"><span></span></label>
+      </div>
+      <div class="field" id="fEnabledWrap">
+        <span>Reminder enabled</span>
+        <label class="switch"><input type="checkbox" id="fEnabled"><span></span></label>
+      </div>
+      <p id="fStatus" class="form-error hidden" role="alert"></p>
+      <div class="sheet-actions">
+        <button id="fDelete" class="btn danger hidden" type="button"><svg class="ic" aria-hidden="true"><use href="#i-trash"></use></svg> Delete</button>
+        <button id="fDuplicate" class="btn hidden" type="button"><svg class="ic" aria-hidden="true"><use href="#i-copy"></use></svg> Duplicate</button>
+        <div class="grow"></div>
+        <button id="fCancel" class="btn" type="button">Cancel</button>
+        <button id="fSave" class="btn primary" type="submit">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Confirm sheet -->
+<div id="confirmSheet" class="sheet-wrap hidden" aria-hidden="true">
+  <div class="sheet-backdrop" data-close="confirmSheet"></div>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <div class="sheet-grab"></div>
+    <div class="sheet-head">
+      <h3 id="confirmTitle">Are you sure?</h3>
+      <button class="icon-btn" type="button" data-close="confirmSheet" aria-label="Close"><svg class="ic" aria-hidden="true"><use href="#i-close"></use></svg></button>
+    </div>
+    <p id="confirmText" class="muted"></p>
+    <div class="sheet-actions">
+      <div class="grow"></div>
+      <button id="confirmCancel" class="btn" type="button">Cancel</button>
+      <button id="confirmOk" class="btn danger" type="button">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- Suggested schedule sheet -->
+<div id="suggestSheet" class="sheet-wrap hidden" aria-hidden="true">
+  <div class="sheet-backdrop" data-close="suggestSheet"></div>
+  <div class="sheet tall" role="dialog" aria-modal="true" aria-labelledby="suggestTitle">
+    <div class="sheet-grab"></div>
+    <div class="sheet-head">
+      <h3 id="suggestTitle">Suggested schedule</h3>
+      <button class="icon-btn" type="button" data-close="suggestSheet" aria-label="Close"><svg class="ic" aria-hidden="true"><use href="#i-close"></use></svg></button>
+    </div>
+    <p class="muted small">Based on your office hours. Nothing is added until you tap Add all.</p>
+    <ul id="suggestList" class="timeline suggest-list"></ul>
+    <div class="sheet-actions">
+      <button id="suggestCustomize" class="btn" type="button">Customize</button>
+      <div class="grow"></div>
+      <button id="suggestCancel" class="btn" type="button">Cancel</button>
+      <button id="suggestAdd" class="btn primary" type="button">Add all</button>
+    </div>
+  </div>
+</div>
+
+<!-- What's new sheet -->
+<div id="whatsNewSheet" class="sheet-wrap hidden" aria-hidden="true">
+  <div class="sheet-backdrop" data-close="whatsNewSheet"></div>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="whatsNewTitle">
+    <div class="sheet-grab"></div>
+    <div class="sheet-head">
+      <h3 id="whatsNewTitle">What's new</h3>
+      <button class="icon-btn" type="button" data-close="whatsNewSheet" aria-label="Close"><svg class="ic" aria-hidden="true"><use href="#i-close"></use></svg></button>
+    </div>
+    <div class="update-hero">
+      <span class="update-hero-icon"><svg class="ic" aria-hidden="true"><use href="#i-sparkles"></use></svg></span>
+      <div>
+        <b id="whatsNewVersion">v1.2.0</b>
+        <span id="whatsNewDate" class="muted small"></span>
+      </div>
+    </div>
+    <ul id="whatsNewList" class="update-list"></ul>
+    <div class="sheet-actions">
+      <div class="grow"></div>
+      <button id="whatsNewClose" class="btn primary" type="button">Got it</button>
+    </div>
+  </div>
+</div>
+
+<script src="shared.js"></script>
+<script src="sounds.js"></script>
+<script src="voice.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

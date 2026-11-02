@@ -1,0 +1,16 @@
+# dependencies
+node_modules/
+
+# Vercel
+.vercel/
+
+# local env
+.env
+.env.local
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/

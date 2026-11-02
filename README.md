@@ -8,6 +8,8 @@ tools.
 **Dev by [Nabin Khadka](https://nabinkhadka.com)** ·
 [GitHub Repository](https://github.com/Nabinkdk7/work-reminder-app)
 
+**Live app: [https://workreminder-app.vercel.app](https://workreminder-app.vercel.app)**
+
 ---
 
 ## Features
@@ -75,10 +77,10 @@ files.
 
 1. Push this folder (or the whole repository) to GitHub.
 2. In Vercel, choose **Add New → Project** and import the repository.
-3. If the app lives in a subfolder, set **Root Directory** to `workreminderapp`.
+3. This repository keeps the app at its root, so leave **Root Directory** empty.
 4. Framework preset: **Other**. Build command: leave empty. Output directory:
    leave empty (or `.`).
-5. Deploy. Open the `https://…vercel.app` URL on your phone.
+5. Deploy. Open [https://workreminder-app.vercel.app](https://workreminder-app.vercel.app) on your phone.
 
 ### Option B — Vercel CLI
 
@@ -183,9 +185,9 @@ sent to a server. Use **Settings → Backup & data** before changing phones.
 | Chrome / Edge / Firefox (desktop) | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Safari (macOS) | ✅ | ✅ | ✅ | ✅ | ✅ |
 
-Voice availability depends on the voices installed on the device. If a
-requested gender is unavailable, the app reports it instead of substituting the
-opposite voice.
+Voice availability depends on the voices installed on the device. The app prefers
+an exact male or female voice; if the phone only exposes unlabelled voices, it
+adjusts pitch to approximate the requested gender instead of failing.
 
 ---
 

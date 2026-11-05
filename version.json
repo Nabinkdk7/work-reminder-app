@@ -1,10 +1,10 @@
 {
-  "version": "1.4.5",
+  "version": "1.5.0",
   "released": "2026-11-05",
   "notes": [
-    "Fixed: on mobile, the app now searches ALL installed voices (every language) for a genuine male voice, not just the requested language.",
-    "Improved: mobile now tries en-GB, en-AU, and en-IN locales in sequence before falling back to pitch adjustment.",
-    "Kept all laptop/desktop voice behaviour unchanged.",
-    "If your phone has no male voice installed, the app can only approximate one - install a male English voice in your phone's Text-to-Speech settings for a clean sound."
+    "Simplified: one automatic male voice. The voice picker is gone - the app now chooses the best male voice on your phone and uses it for every reminder.",
+    "Improved: male voice selection now searches all installed voices across every language for a genuine male voice.",
+    "Polished: cleaner Settings screen with just Test Voice, speed, volume, and diagnostics.",
+    "Consistent: the same male voice is used everywhere in the app."
   ]
 }

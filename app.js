@@ -666,75 +666,26 @@
     el.value = value;
   }
 
-  /* List the real voices installed on the phone so the quality choice is
-     visible and can be pinned. Falls back to "Automatic" when the phone does
-     not name any voice of the requested gender. */
-  function renderVoiceModels() {
-    const sel = $("voiceModel");
-    if (!sel || !state) return;
-    const s = state.settings.voice;
-    let listed = { voices: [], male: [], bestMale: null, bestFemale: null };
-    try { listed = Voice.listVoices() || listed; } catch (e) {}
-    const want = s.gender === "female" ? "female" : s.gender === "male" ? "male" : null;
-
-    // Show every installed voice. On many Android phones the voice names do
-    // not say "male", so hiding them would leave the user with no way to pick
-    // the one that actually sounds male.
-    const all = (listed.voices || []).slice(0, 60);
-    const preferred = want ? all.filter((v) => v.gender === want) : all.slice();
-    const rest = want ? all.filter((v) => v.gender !== want) : [];
-    const score = (v) => (want === "female" ? (v.quality || 0) : (v.maleRank || v.quality || 0));
-    preferred.sort((a, c) => score(c) - score(a));
-    rest.sort((a, c) => score(c) - score(a));
-    const items = preferred.concat(rest);
-
-    const autoLabel = want === "male"
-      ? "Automatic - best male voice"
-      : want === "female"
-        ? "Automatic - best female voice"
-        : "Automatic - best device voice";
-    const options = [{ value: "", label: autoLabel }].concat(items.map((v) => {
-      const recommended = (v.recommendedMale && want === "male") || (v.recommendedFemale && want === "female");
-      return {
-        value: v.uri || v.name,
-        label: v.name + (recommended ? " (recommended)" : "")
-      };
-    }));
-    // Never drop a saved pin just because the phone has not published its
-    // voice list yet. Only forget it when voices are known and the pin is gone.
-    const hasVoices = items.length > 0;
-    const known = items.some((v) => (v.uri || v.name) === s.name);
-    const current = s.name && (!hasVoices || known) ? s.name : "";
-    fillSelect(sel, options, current);
-    if (hasVoices && s.name && !known) s.name = "";
-
-    const hint = $("voiceModelHint");
-    if (hint) {
-      if (want === "male") {
-        hint.textContent = listed.bestMale
-          ? "Best male voice: " + listed.bestMale.name + (listed.bestMale.local ? " (on device, works offline)." : " (online).") +
-            " Pick another voice below to compare, or leave Automatic."
-          : "This phone has not named a male voice. Pick the deepest-sounding voice below, or install an English male voice in your phone's text-to-speech settings.";
-      } else if (want === "female") {
-        hint.textContent = listed.bestFemale
-          ? "Best female voice: " + listed.bestFemale.name + ". Pick another voice below to compare, or leave Automatic."
-          : "This phone has not named a female voice, so the closest voice is used.";
-      } else {
-        hint.textContent = "Choose a specific installed voice, or let the app pick the best one automatically.";
-      }
-    }
-  }
-
-  /* Voices often arrive after the Settings view is first drawn. */
-  let voiceAwaitPending = false;
+  /* Voice model is chosen automatically - no picker. Just refresh the hint
+     with the best male voice this phone reports. */
   function renderVoiceModelsWhenReady() {
-    renderVoiceModels();
-    if (voiceAwaitPending || !Voice.awaitVoices) return;
-    voiceAwaitPending = true;
-    Voice.awaitVoices(2600).then(() => {
-      voiceAwaitPending = false;
-      renderVoiceModels();
-    }).catch(() => { voiceAwaitPending = false; });
+    const hint = $("voiceModelHint");
+    if (!hint) return;
+    let listed = { bestMale: null, count: 0 };
+    try { listed = Voice.listVoices() || listed; } catch (e) {}
+    if (listed.bestMale) {
+      hint.textContent = "Using " + listed.bestMale.name +
+        (listed.bestMale.local ? " (on device, works offline)." : " (online).") +
+        " Tap Test voice to hear it.";
+    } else {
+      hint.textContent = "This phone has not named a male voice. Tap Test voice to hear the best available, or install an English male voice in your phone's text-to-speech settings.";
+    }
+    try { if (Voice.awaitVoices) Voice.awaitVoices(2600).then(() => {
+      let l2 = null; try { l2 = Voice.listVoices(); } catch (e) {}
+      if (l2 && l2.bestMale && hint) hint.textContent = "Using " + l2.bestMale.name +
+        (l2.bestMale.local ? " (on device, works offline)." : " (online).") +
+        " Tap Test voice to hear it.";
+    }).catch(() => {}); } catch (e) {}
   }
 
   function renderSettings() {
@@ -778,10 +729,7 @@
       { value: "en", label: "English" }, { value: "ne", label: "Nepali" },
       { value: "hi", label: "Hindi" }, { value: "system", label: "Device default" },
     ], s.voice.language);
-    fillSelect($("voiceGender"), [
-      { value: "default", label: "System default" }, { value: "female", label: "Female" },
-      { value: "male", label: "Male" },
-    ], s.voice.gender);
+    // Voice gender is always male now - no picker.
     fillSelect($("voiceSpeed"), [
       { value: "slow", label: "Slow" }, { value: "normal", label: "Normal" }, { value: "fast", label: "Fast" },
     ], s.voice.speed);
@@ -1533,23 +1481,8 @@
 
   function voiceConfig() {
     const v = state.settings.voice;
-    // The app ships with a male voice by default. Resolve "default" (and any
-    // stale value) to male so a system-default setting can never silently speak
-    // with a female-sounding voice.
-    const gender = v.gender === "female" ? "female" : "male";
-    let voiceName = v.name || "";
-    // Drop a stale pin that no longer matches the chosen gender. A pin saved by
-    // an older build (or a manual pick) can keep pointing at a female voice
-    // even after the gender is changed to male, which made the male voice keep
-    // sounding female.
-    if (voiceName) {
-      try {
-        const listed = Voice.listVoices ? (Voice.listVoices().voices || []) : [];
-        const pinned = listed.find((x) => (x.uri || x.name) === voiceName);
-        if (pinned && pinned.gender && pinned.gender !== gender) voiceName = "";
-      } catch (e) {}
-    }
-    return { language: v.language, gender, speed: v.speed, volume: v.volume, voiceName };
+    // The app now ships a single male voice. Gender is always male.
+    return { language: v.language, gender: "male", speed: v.speed, volume: v.volume, voiceName: "" };
   }
 
   async function sendNotification(rem) {
@@ -2500,20 +2433,6 @@
     $("voiceLang").addEventListener("change", (e) => {
       state.settings.voice.language = e.target.value;
       save();
-    });
-    $("voiceGender").addEventListener("change", (e) => {
-      state.settings.voice.gender = e.target.value;
-      // A pinned voice belongs to the previous gender; let the new one be
-      // chosen automatically.
-      state.settings.voice.name = "";
-      save();
-      renderVoiceModelsWhenReady();
-      testVoice();
-    });
-    $("voiceModel").addEventListener("change", (e) => {
-      state.settings.voice.name = e.target.value;
-      save();
-      testVoice();
     });
     $("voiceSpeed").addEventListener("change", (e) => {
       state.settings.voice.speed = e.target.value;

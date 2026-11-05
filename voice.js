@@ -200,6 +200,16 @@
     const pinned = findPreferred(vs, preferred);
     if (pinned) return makePicked(pinned, wantG);
 
+    // On mobile, search ALL voices (every language) for a genuine male voice
+    // first. Android often has a male voice under a different locale than the
+    // requested language, and the normal language filter would miss it.
+    if (isMobile() && wantG === "male") {
+      const maleVoices = vs.filter((v) => voiceGenderOf(v) === "male");
+      if (maleVoices.length) {
+        return makePicked(bestOf(maleVoices, "male"), "male");
+      }
+    }
+
     const prefs = LANGS[language] || (language && language !== "system" ? [language, "en"] : ["en"]);
     for (const p of prefs) {
       const pool = vs.filter((v) => String(v.lang).toLowerCase().startsWith(String(p).toLowerCase()));
@@ -365,10 +375,12 @@
 
       const attempts = [];
       // On mobile the engine often ignores the voice object and speaks with the
-      // default voice for the locale. Try a genuine male locale first so a clean
-      // male voice is used when the phone has one.
+      // default voice for the locale. Try several locales that commonly resolve
+      // to a male voice on phones, so a clean male voice is used when available.
       if (isMobile() && wantG === "male") {
         attempts.push({ voice: null, lang: "en-GB", rate, pitch: 1.0, phoneDefault: true });
+        attempts.push({ voice: null, lang: "en-AU", rate, pitch: 1.0, phoneDefault: true });
+        attempts.push({ voice: null, lang: "en-IN", rate, pitch: 1.0, phoneDefault: true });
       }
       if (picked && picked.voice) {
         attempts.push({

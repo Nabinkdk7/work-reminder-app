@@ -1,10 +1,10 @@
 {
-  "version": "1.4.4",
+  "version": "1.4.5",
   "released": "2026-11-05",
   "notes": [
-    "Fixed: on mobile, the app now tries a genuine male voice (en-GB locale) before any approximate voice, so mobile no longer speaks with a female-sounding default when a male voice is available.",
-    "Improved: mobile speech unlock and fallback handling for Android and iOS.",
+    "Fixed: on mobile, the app now searches ALL installed voices (every language) for a genuine male voice, not just the requested language.",
+    "Improved: mobile now tries en-GB, en-AU, and en-IN locales in sequence before falling back to pitch adjustment.",
     "Kept all laptop/desktop voice behaviour unchanged.",
-    "Voice diagnostics now include the platform for easier troubleshooting."
+    "If your phone has no male voice installed, the app can only approximate one - install a male English voice in your phone's Text-to-Speech settings for a clean sound."
   ]
 }

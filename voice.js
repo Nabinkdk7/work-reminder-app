@@ -21,6 +21,8 @@
   const MALE_PREMIUM = /alex|daniel|arthur|aaron|fred|tom|oliver|rishi|hemant|guy|andrew|brian|christopher|davis|eric|steffan|roger|google uk english male|google us english male/;
   const MALE_STANDARD = /david|mark|james|george|ryan|thomas|ravi|arun|madhur|jian|liam|tony|henry|mike|bob|adam|gordon|maged|tarik|yuri|dmitri|pavel/;
   const SETTLE_MS = 90;
+  function isMobile() { return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || ""); }
+  function isAndroid() { return /Android/i.test(navigator.userAgent || ""); }
 
   let voicesCache = null;
   let voicesSource = null;
@@ -362,6 +364,12 @@
       const baseLang = (typeof WR !== "undefined" && WR.ttsLang ? WR.ttsLang(lang) : "en-US") || "en-US";
 
       const attempts = [];
+      // On mobile the engine often ignores the voice object and speaks with the
+      // default voice for the locale. Try a genuine male locale first so a clean
+      // male voice is used when the phone has one.
+      if (isMobile() && wantG === "male") {
+        attempts.push({ voice: null, lang: "en-GB", rate, pitch: 1.0, phoneDefault: true });
+      }
       if (picked && picked.voice) {
         attempts.push({
           voice: picked.voice,
@@ -381,10 +389,10 @@
             pitch: pitchFor(wantG, alt)
           });
         }
-        if (wantG === "male" && picked && !picked.matched) {
+        if (wantG === "male" && picked && !picked.matched && !isMobile()) {
           attempts.push({ voice: null, lang: "en-GB", rate, pitch: 1.0, phoneDefault: true });
         }
-      } else if (wantG === "male") {
+      } else if (wantG === "male" && !isMobile()) {
         // No voice has been published yet (common on iOS until the engine has
         // spoken once). en-GB is usually a genuine male voice there, and
         // Android falls through to its own default below.

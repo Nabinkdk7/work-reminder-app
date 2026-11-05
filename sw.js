@@ -3,7 +3,7 @@
    messages the page can apply (done / snooze). */
 "use strict";
 
-const VERSION = "1.4.3";
+const VERSION = "1.4.4";
 const CACHE = "workreminder-app-v" + VERSION;
 
 const ASSETS = [

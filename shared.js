@@ -9,7 +9,7 @@
 
   const APP = {
     name: "Work Reminder",
-    version: "1.4.3",
+    version: "1.4.4",
     developer: "Nabin Khadka",
     devUrl: "https://nabinkhadka.com",
     repoUrl: "https://github.com/Nabinkdk7/work-reminder-app",

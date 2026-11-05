@@ -381,6 +381,9 @@
             pitch: pitchFor(wantG, alt)
           });
         }
+        if (wantG === "male" && picked && !picked.matched) {
+          attempts.push({ voice: null, lang: "en-GB", rate, pitch: 1.0, phoneDefault: true });
+        }
       } else if (wantG === "male") {
         // No voice has been published yet (common on iOS until the engine has
         // spoken once). en-GB is usually a genuine male voice there, and

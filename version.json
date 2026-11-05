@@ -1,11 +1,10 @@
 {
-  "version": "1.4.2",
+  "version": "1.4.3",
   "released": "2026-11-05",
   "notes": [
-    "Fixed: Android male voice no longer falls back to a female-sounding default voice. Neutral voice names like \"Google US English\" are no longer mistaken for female voices.",
-    "Fixed: a system-default voice setting is now treated as male, so the male voice is always used unless you explicitly choose female.",
-    "Improved: the male voice picker and automatic selection now prefer genuinely male voices.",
-    "Faster: the app still boots in around 200ms and scrolls without the heavy glass blur.",
-    "Voice diagnostics now reports the exact voice your phone publishes."
+    "Fixed: a stale pinned voice that pointed at a female voice is now cleared automatically, so a male setting no longer keeps speaking with a female voice.",
+    "Fixed: when no genuine male voice exists on the phone, the app now tries the en-GB male voice (Daniel / Google UK English Male) before falling back to the phone default.",
+    "Improved: voice diagnostics report the exact voice, pitch and attempt number used.",
+    "Male voice remains the default and is never silently replaced by a female voice."
   ]
 }

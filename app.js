@@ -1537,7 +1537,19 @@
     // stale value) to male so a system-default setting can never silently speak
     // with a female-sounding voice.
     const gender = v.gender === "female" ? "female" : "male";
-    return { language: v.language, gender, speed: v.speed, volume: v.volume, voiceName: v.name };
+    let voiceName = v.name || "";
+    // Drop a stale pin that no longer matches the chosen gender. A pin saved by
+    // an older build (or a manual pick) can keep pointing at a female voice
+    // even after the gender is changed to male, which made the male voice keep
+    // sounding female.
+    if (voiceName) {
+      try {
+        const listed = Voice.listVoices ? (Voice.listVoices().voices || []) : [];
+        const pinned = listed.find((x) => (x.uri || x.name) === voiceName);
+        if (pinned && pinned.gender && pinned.gender !== gender) voiceName = "";
+      } catch (e) {}
+    }
+    return { language: v.language, gender, speed: v.speed, volume: v.volume, voiceName };
   }
 
   async function sendNotification(rem) {

@@ -1,12 +1,11 @@
 {
-  "version": "1.4.1",
+  "version": "1.4.2",
   "released": "2026-11-05",
   "notes": [
-    "Fixed: Android male voice speaks at its natural speed instead of sounding slow or muffled, and every installed voice can now be chosen in Settings.",
-    "Improved: reminders now ask for notification permission when you add one, and the app can hand upcoming reminders to the background service worker.",
-    "Faster: removed the heavy glass blur, so scrolling and tapping respond quicker on phones.",
-    "New: Voice diagnostics shows the exact voices your phone reports if the sound is still not right.",
-    "New: Force reload latest version clears stale app files when an update does not appear.",
-    "Cleaner: the home screen is more compact and the update card is simpler."
+    "Fixed: Android male voice no longer falls back to a female-sounding default voice. Neutral voice names like \"Google US English\" are no longer mistaken for female voices.",
+    "Fixed: a system-default voice setting is now treated as male, so the male voice is always used unless you explicitly choose female.",
+    "Improved: the male voice picker and automatic selection now prefer genuinely male voices.",
+    "Faster: the app still boots in around 200ms and scrolls without the heavy glass blur.",
+    "Voice diagnostics now reports the exact voice your phone publishes."
   ]
 }

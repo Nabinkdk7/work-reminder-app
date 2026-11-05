@@ -1533,7 +1533,11 @@
 
   function voiceConfig() {
     const v = state.settings.voice;
-    return { language: v.language, gender: v.gender, speed: v.speed, volume: v.volume, voiceName: v.name };
+    // The app ships with a male voice by default. Resolve "default" (and any
+    // stale value) to male so a system-default setting can never silently speak
+    // with a female-sounding voice.
+    const gender = v.gender === "female" ? "female" : "male";
+    return { language: v.language, gender, speed: v.speed, volume: v.volume, voiceName: v.name };
   }
 
   async function sendNotification(rem) {

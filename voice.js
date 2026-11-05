@@ -323,7 +323,7 @@
       if (!s) return resolve({ ok: false, error: "no-speech-engine" });
       if (!spoken) return resolve({ ok: false, error: "empty text" });
 
-      const wantG = (cfg.gender === "female" || cfg.gender === "male") ? cfg.gender : null;
+      const wantG = (cfg.gender === "female" || cfg.gender === "male") ? cfg.gender : "male";
       const lang = cfg.language || "en";
       const volume = normalizeVolume(cfg.volume);
 
@@ -351,10 +351,10 @@
 
       let rate = 0.92;
       try {
-        if (typeof WR !== "undefined" && WR.voiceRate) rate = WR.voiceRate(cfg.speed, cfg.gender || "default");
+        if (typeof WR !== "undefined" && WR.voiceRate) rate = WR.voiceRate(cfg.speed, wantG || "male");
       } catch (e) {}
 
-      const picked = pickVoice(lang, cfg.gender || "default", cfg.voiceName);
+      const picked = pickVoice(lang, wantG || "male", cfg.voiceName);
       // An explicitly chosen voice is played exactly as it is: the user picked
       // that sound, so do not "improve" it with a pitch shift.
       const pinnedVoice = findPreferred(voices(), cfg.voiceName);

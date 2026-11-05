@@ -3,7 +3,7 @@
    messages the page can apply (done / snooze). */
 "use strict";
 
-const VERSION = "1.4.0";
+const VERSION = "1.4.1";
 const CACHE = "workreminder-app-v" + VERSION;
 
 const ASSETS = [
@@ -37,9 +37,46 @@ self.addEventListener("install", (event) => {
   })());
 });
 
+/* Reminders handed over by the page. These timers only live as long as the
+   worker does, but they cover the common case where the app is backgrounded
+   and Chrome throttles the page timer. */
+const scheduledTimers = new Map();
+function setSchedule(items) {
+  for (const timer of scheduledTimers.values()) clearTimeout(timer);
+  scheduledTimers.clear();
+  const now = Date.now();
+  for (const item of items || []) {
+    if (!item || !item.title || !item.at) continue;
+    const delay = item.at - now;
+    if (delay <= 0 || delay > 24 * 60 * 60 * 1000) continue;
+    const timer = setTimeout(() => {
+      scheduledTimers.delete(item.id);
+      self.registration.showNotification(item.title, {
+        body: item.body || "It's time for " + item.title + ".",
+        tag: item.tag || ("wr-" + item.id),
+        renotify: true,
+        icon: "icons/icon-192.png",
+        badge: "icons/badge-96.png",
+        silent: false,
+        vibrate: item.vibrate,
+        data: { id: item.id, at: item.at, scheduled: true },
+        actions: [
+          { action: "done", title: "Mark done" },
+          { action: "snooze", title: "Snooze" },
+        ],
+      }).catch(() => {});
+    }, delay);
+    scheduledTimers.set(item.id, timer);
+  }
+}
+
 self.addEventListener("message", (event) => {
   const data = event.data || {};
   if (data.type === "SKIP_WAITING") self.skipWaiting();
+
+  if (data.type === "WR_SCHEDULE") {
+    setSchedule(data.items);
+  }
 
   // Update notifications are shown from the worker rather than the page: it
   // still works when the tab is backgrounded and does not depend on the page

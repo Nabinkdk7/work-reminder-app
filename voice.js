@@ -343,32 +343,55 @@
       }
       try { s.resume(); } catch (e) {}
 
-      await awaitVoices(voices().length ? 400 : 2600);
+      // Waiting for the voice list is right for a reminder that fires on its
+      // own, but wrong inside a tap: iOS drops the gesture that allows audio
+      // when the call is delayed. `immediate` (used by Test voice and the
+      // gender picker) speaks now and lets voices arrive for the next call.
+      if (!cfg.immediate) await awaitVoices(voices().length ? 400 : 2600);
 
-      const picked = pickVoice(lang, cfg.gender || "default", cfg.voiceName);
-      if (!picked || !picked.voice) return resolve({ ok: false, error: "no-voices" });
-
-      let rate = 0.86;
+      let rate = 0.92;
       try {
         if (typeof WR !== "undefined" && WR.voiceRate) rate = WR.voiceRate(cfg.speed, cfg.gender || "default");
       } catch (e) {}
-      const pitch = pitchFor(wantG, picked);
 
-      const fallbackPitch = wantG === "male" ? 0.72 : wantG === "female" ? 1.08 : 1.0;
+      const picked = pickVoice(lang, cfg.gender || "default", cfg.voiceName);
+      // An explicitly chosen voice is played exactly as it is: the user picked
+      // that sound, so do not "improve" it with a pitch shift.
+      const pinnedVoice = findPreferred(voices(), cfg.voiceName);
+      const fallbackPitch = wantG === "male" ? 0.78 : wantG === "female" ? 1.08 : 1.0;
       const baseLang = (typeof WR !== "undefined" && WR.ttsLang ? WR.ttsLang(lang) : "en-US") || "en-US";
 
-      const attempts = [
-        { voice: picked.voice, lang: picked.voice.lang || baseLang, rate, pitch }
-      ];
+      const attempts = [];
+      if (picked && picked.voice) {
+        attempts.push({
+          voice: picked.voice,
+          lang: picked.voice.lang || baseLang,
+          rate,
+          pitch: pinnedVoice ? 1.0 : pitchFor(wantG, picked)
+        });
 
-      // A second real voice of the same gender keeps quality up if the first
-      // choice is a network voice that cannot synthesize right now.
-      const alt = wantG ? alternativeVoice(lang, wantG, picked.voice) : null;
-      if (alt) attempts.push({ voice: alt.voice, lang: alt.voice.lang || baseLang, rate, pitch: pitchFor(wantG, alt) });
+        // A second real voice of the same gender keeps quality up if the first
+        // choice is a network voice that cannot synthesize right now.
+        const alt = wantG ? alternativeVoice(lang, wantG, picked.voice) : null;
+        if (alt) {
+          attempts.push({
+            voice: alt.voice,
+            lang: alt.voice.lang || baseLang,
+            rate,
+            pitch: pitchFor(wantG, alt)
+          });
+        }
+      } else if (wantG === "male") {
+        // No voice has been published yet (common on iOS until the engine has
+        // spoken once). en-GB is usually a genuine male voice there, and
+        // Android falls through to its own default below.
+        attempts.push({ voice: null, lang: "en-GB", rate, pitch: 1.0, phoneDefault: true });
+      }
 
       // Android's safest path: no explicit voice and no forced locale, just
-      // the phone's own default engine, with pitch carrying the gender.
-      attempts.push({ voice: null, lang: null, rate, pitch: fallbackPitch });
+      // the phone's own default engine. This also means an empty voice list is
+      // never a hard failure - the phone can still speak.
+      attempts.push({ voice: null, lang: null, rate, pitch: fallbackPitch, phoneDefault: true });
 
       let last = null;
       for (let i = 0; i < attempts.length; i++) {
@@ -380,15 +403,17 @@
         const attempt = Object.assign({ volume }, attempts[i]);
         const res = await attemptSpeak(s, spoken, attempt);
         if (res.ok) {
+          const chosen = picked && picked.voice ? picked.voice : null;
           return resolve(Object.assign({}, res, {
-            selectedVoice: picked.voice.name,
-            selectedVoiceUri: picked.voice.voiceURI,
-            matched: picked.matched,
-            approximate: !!wantG && !picked.matched,
-            genderMatched: !wantG || picked.matched,
-            pinned: !!findPreferred(voices(), cfg.voiceName),
+            selectedVoice: chosen ? chosen.name : "phone default",
+            selectedVoiceUri: chosen ? chosen.voiceURI : "",
+            matched: chosen ? !!picked.matched : false,
+            approximate: chosen ? (!!wantG && !picked.matched) : !!wantG,
+            genderMatched: chosen ? (!wantG || !!picked.matched) : false,
+            pinned: !!pinnedVoice,
             fallback: i > 0,
-            attempt: i + 1
+            attempt: i + 1,
+            voiceCount: voices().length
           }));
         }
         last = res;
@@ -396,12 +421,14 @@
         if (res.error === "not-allowed" || res.error === "empty text") break;
       }
 
+      const failedVoice = picked && picked.voice ? picked.voice : null;
       resolve({
         ok: false,
         error: (last && last.error) || "speech-failed",
-        voice: picked.voice.name,
-        selectedVoice: picked.voice.name,
-        tries: attempts.length
+        voice: failedVoice ? failedVoice.name : "phone default",
+        selectedVoice: failedVoice ? failedVoice.name : "phone default",
+        tries: attempts.length,
+        voiceCount: voices().length
       });
     });
   }

@@ -1,11 +1,12 @@
 {
-  "version": "1.4.0",
-  "released": "2026-11-03",
+  "version": "1.4.1",
+  "released": "2026-11-05",
   "notes": [
-    "New: a high-quality male voice is now the default for every reminder.",
-    "New: Settings > Voice > Voice model lists the voices installed on your phone so you can lock in the best male voice and keep it for every alert.",
-    "Improved: a real male voice is left at its natural pitch instead of being slowed down, so it sounds clearer and less robotic.",
-    "Improved: if the chosen voice cannot speak, the app tries the next-best male voice before falling back to the phone default.",
-    "Removed: the floating + button has been removed for a cleaner screen. Use Add on the Schedule tab."
+    "Fixed: Android male voice speaks at its natural speed instead of sounding slow or muffled, and every installed voice can now be chosen in Settings.",
+    "Improved: reminders now ask for notification permission when you add one, and the app can hand upcoming reminders to the background service worker.",
+    "Faster: removed the heavy glass blur, so scrolling and tapping respond quicker on phones.",
+    "New: Voice diagnostics shows the exact voices your phone reports if the sound is still not right.",
+    "New: Force reload latest version clears stale app files when an update does not appear.",
+    "Cleaner: the home screen is more compact and the update card is simpler."
   ]
 }

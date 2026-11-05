@@ -48,6 +48,7 @@
   let formDays = new Set([1, 2, 3, 4, 5]);
   let officeDays = new Set([1, 2, 3, 4, 5]);
   let deferredPrompt = null;
+  let lastVoiceResult = null;
   let swReg = null;
   let confirmResolve = null;
   let activeAlert = null;
@@ -130,6 +131,7 @@
     state.updatedAt = Date.now();
     try {
       localStorage.setItem(STORE_KEY, JSON.stringify(state));
+      try { syncWorkerSchedule(); } catch (e2) {}
       return true;
     } catch (e) {
       toast("Storage is full — could not save.", true);
@@ -228,6 +230,15 @@
     return Notification.permission;
   }
 
+  /* Ask for notification permission from a real tap (saving/adding a reminder).
+     This is the moment the request makes sense, and browsers only show the
+     prompt in response to a user action. */
+  function nudgeNotifications() {
+    if (!state || !state.settings.notificationsEnabled) return;
+    if (notificationState() !== "default") return;
+    setTimeout(() => { enableNotifications(true); }, 250);
+  }
+
   /* ---------------- navigation ---------------- */
 
   function showView(name) {
@@ -314,7 +325,7 @@
     const now = new Date();
     $("greeting").textContent = greeting(now);
     $("todayDate").textContent = now.toLocaleDateString(undefined, {
-      weekday: "long", month: "long", day: "numeric",
+      weekday: "long", month: "short", day: "numeric",
     });
 
     const todays = todayReminders(now);
@@ -666,9 +677,16 @@
     try { listed = Voice.listVoices() || listed; } catch (e) {}
     const want = s.gender === "female" ? "female" : s.gender === "male" ? "male" : null;
 
-    let items = (listed.voices || []).filter((v) => !want || v.gender === want);
-    if (!items.length) items = (listed.voices || []).slice();
-    items.sort((a, b) => (b.maleRank || b.quality || 0) - (a.maleRank || a.quality || 0));
+    // Show every installed voice. On many Android phones the voice names do
+    // not say "male", so hiding them would leave the user with no way to pick
+    // the one that actually sounds male.
+    const all = (listed.voices || []).slice(0, 60);
+    const preferred = want ? all.filter((v) => v.gender === want) : all.slice();
+    const rest = want ? all.filter((v) => v.gender !== want) : [];
+    const score = (v) => (want === "female" ? (v.quality || 0) : (v.maleRank || v.quality || 0));
+    preferred.sort((a, c) => score(c) - score(a));
+    rest.sort((a, c) => score(c) - score(a));
+    const items = preferred.concat(rest);
 
     const autoLabel = want === "male"
       ? "Automatic - best male voice"
@@ -676,11 +694,10 @@
         ? "Automatic - best female voice"
         : "Automatic - best device voice";
     const options = [{ value: "", label: autoLabel }].concat(items.map((v) => {
-      const badge = v.recommendedMale && want === "male" ? " - recommended"
-        : v.recommendedFemale && want === "female" ? " - recommended" : "";
+      const recommended = (v.recommendedMale && want === "male") || (v.recommendedFemale && want === "female");
       return {
         value: v.uri || v.name,
-        label: v.name + (v.local ? " (on device)" : " (online)") + badge
+        label: v.name + (recommended ? " (recommended)" : "")
       };
     }));
     // Never drop a saved pin just because the phone has not published its
@@ -695,12 +712,13 @@
     if (hint) {
       if (want === "male") {
         hint.textContent = listed.bestMale
-          ? "Using " + listed.bestMale.name + (listed.bestMale.local ? " - high quality and works offline." : " - high quality, needs internet. A voice on the device is used if it is unavailable.")
-          : "This phone has no named male voice yet. A pitch-adjusted voice is used until you install one in your phone's text-to-speech settings.";
+          ? "Best male voice: " + listed.bestMale.name + (listed.bestMale.local ? " (on device, works offline)." : " (online).") +
+            " Pick another voice below to compare, or leave Automatic."
+          : "This phone has not named a male voice. Pick the deepest-sounding voice below, or install an English male voice in your phone's text-to-speech settings.";
       } else if (want === "female") {
         hint.textContent = listed.bestFemale
-          ? "Using " + listed.bestFemale.name + "."
-          : "This phone has no named female voice yet, so the closest voice is used.";
+          ? "Best female voice: " + listed.bestFemale.name + ". Pick another voice below to compare, or leave Automatic."
+          : "This phone has not named a female voice, so the closest voice is used.";
       } else {
         hint.textContent = "Choose a specific installed voice, or let the app pick the best one automatically.";
       }
@@ -708,11 +726,15 @@
   }
 
   /* Voices often arrive after the Settings view is first drawn. */
+  let voiceAwaitPending = false;
   function renderVoiceModelsWhenReady() {
     renderVoiceModels();
-    if (Voice.awaitVoices) {
-      Voice.awaitVoices(2600).then(renderVoiceModels).catch(() => {});
-    }
+    if (voiceAwaitPending || !Voice.awaitVoices) return;
+    voiceAwaitPending = true;
+    Voice.awaitVoices(2600).then(() => {
+      voiceAwaitPending = false;
+      renderVoiceModels();
+    }).catch(() => { voiceAwaitPending = false; });
   }
 
   function renderSettings() {
@@ -799,10 +821,13 @@
   function renderAll() {
     if (!state) return;
     applyTheme();
-    renderHome();
-    renderSchedule();
-    renderFocus();
-    renderSettings();
+    // Only the visible view needs rebuilding. Hidden views are rendered when
+    // they are opened, which keeps taps fast on slower phones.
+    if (view === "home") renderHome();
+    else if (view === "schedule") renderSchedule();
+    else if (view === "focus") renderFocus();
+    else if (view === "settings") renderSettings();
+    updateHeader();
     renderUpdateUI();
   }
 
@@ -1022,6 +1047,7 @@
     renderAll();
     haptic(20);
     toast(existing ? "Reminder updated." : "Reminder added.");
+    nudgeNotifications();
   }
 
   async function deleteReminder() {
@@ -1085,6 +1111,7 @@
     haptic(20);
     renderAll();
     toast("Quick reminder added.");
+    nudgeNotifications();
   }
 
   /* ---------------- suggested schedule ---------------- */
@@ -1535,6 +1562,50 @@
     try { new Notification(rem.title, opts); } catch (e) {}
   }
 
+  /* The page timer is the primary alarm. While the app is in the background,
+     also hand the next few reminders to the service worker so it can raise
+     them even if Chrome throttles the page. The same tag is used, so if both
+     paths fire the user still sees one notification. */
+  let lastScheduleSync = 0;
+  function syncWorkerSchedule(force) {
+    if (!("serviceWorker" in navigator)) return;
+    const worker = swReg && swReg.active;
+    if (!worker || !worker.postMessage) return;
+    const now = Date.now();
+    if (!force && now - lastScheduleSync < 15000) return;
+    lastScheduleSync = now;
+
+    if (document.visibilityState !== "hidden" || !state ||
+      !state.settings.enabled || !state.settings.notificationsEnabled || !hasNotifications() || isPaused()) {
+      worker.postMessage({ type: "WR_SCHEDULE", items: [] });
+      return;
+    }
+
+    const items = [];
+    for (const r of state.reminders) {
+      if (!r.enabled || !r.notificationEnabled) continue;
+      let at = 0;
+      const due = WR.dueMoment(r, new Date(now));
+      if (due && due.getTime() > now - 60000) at = due.getTime();
+      else {
+        const next = WR.nextOccurrence(r, new Date(now));
+        if (next) at = next.getTime();
+      }
+      if (!at || at - now > 24 * 60 * 60 * 1000) continue;
+      items.push({
+        id: r.id,
+        title: r.title,
+        body: r.message || "It's time for " + r.title + ".",
+        at,
+        tag: "wr-" + r.id,
+        sound: r.sound,
+        vibrate: state.settings.haptics ? [40, 60, 40] : undefined,
+      });
+    }
+    items.sort((a, b) => a.at - b.at);
+    worker.postMessage({ type: "WR_SCHEDULE", items: items.slice(0, 24) });
+  }
+
   async function testNotification() {
     await enableNotifications(true);
     if (typeof Notification === "undefined" || Notification.permission !== "granted") {
@@ -1613,31 +1684,103 @@
     const text = up.length && (up[0].r.message || "").trim()
       ? up[0].r.message.trim()
       : "Please return your cup to the kitchen.";
-    const res = await Voice.speak(text, voiceConfig());
+    // `immediate` keeps the speech call inside the tap gesture. Waiting for a
+    // late voice list first is what makes iOS silently refuse to speak.
+    const res = await Voice.speak(text, Object.assign({}, voiceConfig(), { immediate: true }));
+    lastVoiceResult = res || null;
+    updateVoiceDiagnostics();
     if (!el) return;
     el.classList.remove("error");
     if (!res) {
       el.textContent = "Could not start the voice test.";
     } else if (res.ok) {
-      if (res.approximate) {
-        el.textContent = "Playing with " + (res.voice || "the closest system voice") +
-          " - this phone has no separate " + (state.settings.voice.gender === "male" ? "male" : "female") +
-          " voice, so the pitch is adjusted.";
+      const detail = (res.voice || "the system voice") +
+        (res.lang ? " (" + res.lang + ")" : "") +
+        (res.rate ? ", speed " + res.rate : "") +
+        (res.pitch ? ", pitch " + res.pitch : "");
+      if (res.selectedVoice === "phone default" || res.voice === "phone default") {
+        el.textContent = "Playing with the phone's own default voice. This phone has not named a male voice yet, so install one in its text-to-speech settings for a stronger male sound.";
+      } else if (res.approximate) {
+        el.textContent = "Playing with " + detail +
+          " - this phone has no separate male voice, so the pitch is adjusted.";
       } else if (res.fallback) {
-        el.textContent = res.voice === "phone default"
-          ? "Playing with the phone's default voice."
-          : "The chosen voice did not answer, so the backup voice " + res.voice + " is playing.";
+        el.textContent = "The chosen voice did not answer, so the backup " + detail + " is playing.";
       } else {
-        el.textContent = "Playing with " + (res.voice || "the system voice") + ".";
+        el.textContent = "Playing with " + detail + ".";
       }
     } else if (res.error === "synthesis-failed" || res.error === "speech-did-not-start" || res.error === "audio-busy") {
       el.textContent = "The phone's speech engine refused to start. Tap Test voice once more. If it keeps failing, set Voice to System default, or install a text-to-speech voice in your phone settings.";
     } else if (res.error === "not-allowed") {
       el.textContent = "The phone blocked speech. Tap Test voice again so the browser receives a direct tap, then try the reminder.";
-    } else if (res.error === "no-voices" || res.error === "no-speech-engine") {
-      el.textContent = "This browser has no speech voices installed. Try Chrome, Edge or Safari.";
+    } else if (res.error === "no-speech-engine") {
+      el.textContent = "This browser has no speech engine. Try Chrome, Edge or Safari.";
     } else {
-      el.textContent = "Voice test failed: " + res.error;
+      el.textContent = "Voice test failed: " + res.error + ". Open Voice diagnostics below and send me the details.";
+    }
+  }
+
+  /* A readable dump of exactly what this phone reports, so a screenshot is
+     enough to diagnose a voice that will not speak or sounds wrong. */
+  function voiceDiagnosticsText() {
+    let listed = { count: 0, voices: [], male: [], bestMale: null, bestFemale: null };
+    try { listed = Voice.listVoices() || listed; } catch (e) {}
+    const s = state && state.settings ? state.settings.voice : {};
+    const lines = [];
+    lines.push("Work Reminder v" + APP.version);
+    lines.push("Device: " + (navigator.userAgent || "unknown"));
+    lines.push("Speech engine: " + (typeof window.speechSynthesis !== "undefined" ? "available" : "missing"));
+    lines.push("Voices reported: " + (listed.count || 0) +
+      " (" + (listed.male || []).length + " male, " +
+      (listed.voices || []).filter((v) => v.gender === "female").length + " female)");
+    lines.push("Setting: gender=" + (s.gender || "default") +
+      " language=" + (s.language || "en") +
+      " speed=" + (s.speed || "normal") +
+      " pinned=" + (s.name || "automatic"));
+    lines.push("Best male: " + (listed.bestMale
+      ? listed.bestMale.name + " (" + listed.bestMale.lang + (listed.bestMale.local ? ", on device)" : ", online)")
+      : "none named by this phone"));
+    if (lastVoiceResult) {
+      const r = lastVoiceResult;
+      lines.push("Last test: " + (r.ok ? "spoke" : "failed") +
+        " | voice=" + (r.voice || "?") +
+        " | lang=" + (r.lang || "?") +
+        " | rate=" + (r.rate || "?") +
+        " | pitch=" + (r.pitch || "?") +
+        " | attempt=" + (r.attempt || "?") +
+        " | error=" + (r.error || "none"));
+    } else {
+      lines.push("Last test: not run yet");
+    }
+    lines.push("");
+    lines.push("Installed voices:");
+    (listed.voices || []).slice(0, 40).forEach((v, i) => {
+      lines.push((i + 1) + ". " + v.name + " | " + v.lang + " | " +
+        (v.local ? "on device" : "online") + " | " +
+        (v.gender || "gender unknown") +
+        (v.recommendedMale ? " | recommended male" : ""));
+    });
+    if (!(listed.voices || []).length) {
+      lines.push("(none yet - the phone has not published its voice list)");
+    }
+    return lines.join("\n");
+  }
+
+  function updateVoiceDiagnostics() {
+    const pre = $("voiceDiag");
+    if (pre) pre.textContent = voiceDiagnosticsText();
+  }
+
+  function copyVoiceDiagnostics() {
+    const text = voiceDiagnosticsText();
+    const pre = $("voiceDiag");
+    if (pre) pre.textContent = text;
+    const done = () => toast("Diagnostics copied.");
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done).catch(() => {
+        toast("Could not copy. Press and hold the text to copy it.", true);
+      });
+    } else {
+      toast("Press and hold the diagnostics text to copy it.", true);
     }
   }
 
@@ -2025,6 +2168,40 @@
     location.reload();
   }
 
+  /* A last-resort repair for an install stuck on an older build: remove every
+     cache and service worker, then reload straight from the network. Local
+     reminders and settings are untouched because they live in localStorage. */
+  async function forceUpdate() {
+    const btn = $("forceUpdateBtn");
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "Clearing old files…";
+    }
+    updateMessage = "Clearing old files and reloading the newest version…";
+    updateMessageError = false;
+    renderUpdateUI();
+    haptic([12, 45, 12]);
+    try {
+      if ("serviceWorker" in navigator && navigator.serviceWorker.getRegistrations) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map((r) => r.unregister().catch(() => false)));
+      }
+    } catch (e) {}
+    try {
+      if ("caches" in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k).catch(() => false)));
+      }
+    } catch (e) {}
+    try {
+      localStorage.removeItem(UPDATE_DISMISSED_KEY);
+      localStorage.removeItem(UPDATE_NOTIFIED_KEY);
+    } catch (e) {}
+    const url = new URL(location.href);
+    url.searchParams.set("fresh", Date.now().toString(36));
+    location.replace(url.href);
+  }
+
   function watchForUpdates(reg) {
     if (!reg || reg.__wrWatched) return;
     reg.__wrWatched = true;
@@ -2087,6 +2264,7 @@
     const now = new Date();
     trackScreen(now);
     checkDue();
+    syncWorkerSchedule();
 
     if (WR.todayKey(now) !== lastDay) {
       lastDay = WR.todayKey(now);
@@ -2356,6 +2534,14 @@
     $("previewSoundBtn").addEventListener("click", () => previewSound());
     $("testNotifBtn").addEventListener("click", testNotification);
     $("testVoiceBtn").addEventListener("click", testVoice);
+    const diagBtn = $("voiceDiagBtn");
+    if (diagBtn) diagBtn.addEventListener("click", () => updateVoiceDiagnostics());
+    const diagCopy = $("voiceDiagCopy");
+    if (diagCopy) diagCopy.addEventListener("click", copyVoiceDiagnostics);
+    const diagWrap = $("voiceDiagWrap");
+    if (diagWrap) diagWrap.addEventListener("toggle", () => { if (diagWrap.open) updateVoiceDiagnostics(); });
+    const forceBtn = $("forceUpdateBtn");
+    if (forceBtn) forceBtn.addEventListener("click", forceUpdate);
 
     $("offDays").addEventListener("click", (e) => {
       const btn = e.target.closest("[data-office-day]");
@@ -2447,12 +2633,14 @@
         rebaseStopwatch();
         applyWakeLock();
         checkDue();
+        syncWorkerSchedule(true);
         if (state) renderAll();
         if (state && state.stopwatch.running && view === "focus") startStopwatchLoop();
         if (Date.now() - lastUpdateCheck > UPDATE_RECHECK_MS) checkForUpdates(false);
       } else {
         stopStopwatchLoop();
         save();
+        syncWorkerSchedule(true);
       }
     });
 
@@ -2511,6 +2699,7 @@
         watchForUpdates(reg);
         renderUpdateUI();
         checkForUpdates(false);
+        syncWorkerSchedule(true);
       }).catch(() => {});
     } catch (e) {
       console.warn("Service worker registration failed", e);
@@ -2572,7 +2761,7 @@
       if (document.visibilityState === "visible") checkForUpdates(false);
     }, UPDATE_CHECK_MS);
     setTimeout(checkDue, 400);
-    setTimeout(() => checkForUpdates(false), 2500);
+    setTimeout(() => checkForUpdates(false), 1200);
     setTimeout(tick, 250);
 
     try {
@@ -2600,6 +2789,7 @@
     save, renderAll, checkDue, remIsDue,
     markDone, snoozeReminder, showView,
     checkForUpdates, applyUpdate, openWhatsNew, renderUpdateUI,
+    testVoice, voiceDiagnosticsText, forceUpdate,
     version: APP.version,
   };
 })();

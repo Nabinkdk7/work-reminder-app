@@ -142,16 +142,16 @@
 
     <article class="card">
       <div class="card-head">
-        <h3><svg class="ic" aria-hidden="true"><use href="#i-zap"></use></svg> Quick reminder</h3>
-        <span class="chip subtle">one-off</span>
+        <h3><svg class="ic" aria-hidden="true"><use href="#i-calendar"></use></svg> Today</h3>
+        <span class="chip subtle" id="todayCount">0</span>
       </div>
-      <p class="muted small">A single nudge — no schedule needed.</p>
-      <div id="quickChips" class="chip-row" role="group" aria-label="Quick reminder delay"></div>
-      <div class="quick-form">
-        <input id="quickText" type="text" maxlength="160" placeholder="What should I remind you about?" autocomplete="off">
-        <button id="quickAdd" class="btn primary icon-only" type="button" aria-label="Add quick reminder"><svg class="ic" aria-hidden="true"><use href="#i-plus"></use></svg></button>
+      <div class="progress"><span id="todayProgress"></span></div>
+      <ul id="todayList" class="timeline"></ul>
+      <div id="todayEmpty" class="empty hidden">
+        <div class="empty-ic"><svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg></div>
+        <b>Nothing on the schedule</b>
+        <p>Open Schedule and tap Add to create a reminder.</p>
       </div>
-      <p id="quickStatus" class="helper" role="status"></p>
     </article>
 
     <div class="stat-row">
@@ -167,16 +167,16 @@
 
     <article class="card">
       <div class="card-head">
-        <h3><svg class="ic" aria-hidden="true"><use href="#i-calendar"></use></svg> Today</h3>
-        <span class="chip subtle" id="todayCount">0</span>
+        <h3><svg class="ic" aria-hidden="true"><use href="#i-zap"></use></svg> Quick reminder</h3>
+        <span class="chip subtle">one-off</span>
       </div>
-      <div class="progress"><span id="todayProgress"></span></div>
-      <ul id="todayList" class="timeline"></ul>
-      <div id="todayEmpty" class="empty hidden">
-        <div class="empty-ic"><svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg></div>
-        <b>Nothing on the schedule</b>
-        <p>Open Schedule and tap Add to create a reminder.</p>
+      <p class="muted small">A single nudge — no schedule needed.</p>
+      <div id="quickChips" class="chip-row" role="group" aria-label="Quick reminder delay"></div>
+      <div class="quick-form">
+        <input id="quickText" type="text" maxlength="160" placeholder="What should I remind you about?" autocomplete="off">
+        <button id="quickAdd" class="btn primary icon-only" type="button" aria-label="Add quick reminder"><svg class="ic" aria-hidden="true"><use href="#i-plus"></use></svg></button>
       </div>
+      <p id="quickStatus" class="helper" role="status"></p>
     </article>
   </section>
 
@@ -272,7 +272,7 @@
   <section id="view-settings" class="view" data-view="settings">
     <div class="view-head">
       <div><p class="eyebrow">Personalize</p><h2>Settings</h2></div>
-      <span class="chip subtle" id="appVersionChip">v1.4.0</span>
+      <span class="chip subtle" id="appVersionChip">v1.4.1</span>
     </div>
 
     <article class="card">
@@ -331,7 +331,7 @@
           <option value="male">Male</option>
         </select>
       </label>
-      <label class="field">
+      <label class="field stack">
         <span>Voice model</span>
         <select id="voiceModel"></select>
       </label>
@@ -350,6 +350,15 @@
       </div>
       <button id="testVoiceBtn" class="btn full" type="button"><svg class="ic" aria-hidden="true"><use href="#i-volume"></use></svg> Test voice</button>
       <p id="voiceStatus" class="helper" role="status"></p>
+      <details class="voice-diag" id="voiceDiagWrap">
+        <summary>Voice diagnostics</summary>
+        <p class="helper">If the voice still sounds wrong, open this and send me a screenshot. It lists exactly what this phone reports.</p>
+        <pre id="voiceDiag">Tap "Show installed voices".</pre>
+        <div class="btn-row">
+          <button id="voiceDiagBtn" class="btn grow" type="button">Show installed voices</button>
+          <button id="voiceDiagCopy" class="btn grow" type="button">Copy</button>
+        </div>
+      </details>
     </article>
 
     <article class="card">
@@ -440,11 +449,11 @@
     <article class="card update-card" id="updateCard">
       <div class="card-head">
         <h3><svg class="ic" aria-hidden="true"><use href="#i-refresh"></use></svg> App updates</h3>
-        <span class="chip" id="updateBadge">v1.4.0</span>
+        <span class="chip" id="updateBadge">v1.4.1</span>
       </div>
       <p id="updateText" class="muted small">Updates come straight from this Vercel site. Check any time, or let the app check when you open it.</p>
       <div id="updateNotesWrap" class="update-notes hidden">
-        <b>What's new in <span id="updateVersion">v1.4.0</span></b>
+        <b>What's new in <span id="updateVersion">v1.4.1</span></b>
         <ul id="updateNotes"></ul>
       </div>
       <div class="btn-row">
@@ -453,12 +462,17 @@
       </div>
       <p id="updateStatus" class="helper" role="status"></p>
       <p class="helper">Your reminders, settings and backups are kept when the app updates. On iPhone, close and reopen the home-screen app if an update does not appear right away.</p>
+      <details class="force-update">
+        <summary>Update not appearing?</summary>
+        <p class="helper">One tap clears the old app files and reloads the newest version. Reminders and settings are kept.</p>
+        <button id="forceUpdateBtn" class="btn full" type="button">Force reload latest version</button>
+      </details>
     </article>
 
     <article class="card about">
       <div class="about-brand">
         <img src="icons/icon-192.png" width="44" height="44" alt="">
-        <div><b>Work Reminder</b><span id="aboutVersion">v1.4.0</span></div>
+        <div><b>Work Reminder</b><span id="aboutVersion">v1.4.1</span></div>
       </div>
       <p class="muted small">Same reminders, rich chimes and natural voice as the browser extension, rebuilt for phones.</p>
       <div class="about-links">
@@ -622,7 +636,7 @@
     <div class="update-hero">
       <span class="update-hero-icon"><svg class="ic" aria-hidden="true"><use href="#i-sparkles"></use></svg></span>
       <div>
-        <b id="whatsNewVersion">v1.4.0</b>
+        <b id="whatsNewVersion">v1.4.1</b>
         <span id="whatsNewDate" class="muted small"></span>
       </div>
     </div>

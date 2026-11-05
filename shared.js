@@ -9,7 +9,7 @@
 
   const APP = {
     name: "Work Reminder",
-    version: "1.4.0",
+    version: "1.4.1",
     developer: "Nabin Khadka",
     devUrl: "https://nabinkhadka.com",
     repoUrl: "https://github.com/Nabinkdk7/work-reminder-app",
@@ -431,16 +431,19 @@
   /* ---- voice helpers (single source of truth for speech) ---- */
 
   const VOICE_RATES = {
-    male:    { slow: 0.72, normal: 0.92, fast: 1.12 },
-    female:  { slow: 0.62, normal: 0.80, fast: 0.98 },
-    default: { slow: 0.68, normal: 0.86, fast: 1.06 },
+    // 1.0 is the engine's natural speed. Slowing a good male voice down (the
+    // old 0.92) made it sound sluggish and muffled, so normal now speaks at
+    // its intended pace.
+    male:    { slow: 0.78, normal: 1.0, fast: 1.16 },
+    female:  { slow: 0.68, normal: 0.92, fast: 1.08 },
+    default: { slow: 0.72, normal: 0.98, fast: 1.1 },
   };
   function voiceRate(speed, gender) {
     const table = VOICE_RATES[gender] || VOICE_RATES.default;
     return table[speed] || table.normal;
   }
   function voicePitch(gender) {
-    if (gender === "male") return 0.82;
+    // Kept for compatibility; a real voice is never pitch-shifted.
     return 1.0;
   }
   function ttsLang(lang) {
